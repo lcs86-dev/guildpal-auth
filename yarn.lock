@@ -15,18 +15,18 @@
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.24"
 
-"@atomrigslab/better-auth@1.2.6-beta.3":
-  version "1.2.6-beta.3"
-  resolved "https://registry.yarnpkg.com/@atomrigslab/better-auth/-/better-auth-1.2.6-beta.3.tgz#c11a94a7ba2cb00ba11c4bf6bf75b0b984e37b00"
-  integrity sha512-NC7dC0U/HkaZWBlFS0mBOIJSFOTiRMT5UlBIiEQim2usV/qdv9JLZ1mzD3j1HfgNQhqLM5Qx9EaHwHo0HucW5Q==
+"@atomrigslab/better-auth@1.2.6-beta.4":
+  version "1.2.6-beta.4"
+  resolved "https://registry.yarnpkg.com/@atomrigslab/better-auth/-/better-auth-1.2.6-beta.4.tgz#025cad9ad9c9c4dc2712438f567bce62b8a6bdb2"
+  integrity sha512-Nnmvhv5KQRpCxn8XWk29P0JQMsWmcHqy5L3yWp/FirLUEwFRTIYdvXHxBWwuyEmDD+iKs9i4k9/wcJ97QcV0vw==
   dependencies:
     "@better-auth/utils" "0.2.4"
-    "@better-fetch/fetch" "^1.1.18"
+    "@better-fetch/fetch" "catalog:"
     "@noble/ciphers" "^0.6.0"
     "@noble/hashes" "^1.6.1"
     "@simplewebauthn/browser" "^13.0.0"
     "@simplewebauthn/server" "^13.0.0"
-    better-call "^1.0.5"
+    better-call "catalog:"
     defu "^6.1.4"
     jose "^5.9.6"
     kysely "^0.27.6"
@@ -42,7 +42,7 @@
     typescript "^5.8.2"
     uncrypto "^0.1.3"
 
-"@better-fetch/fetch@^1.1.18", "@better-fetch/fetch@^1.1.4":
+"@better-fetch/fetch@^1.1.4", "@better-fetch/fetch@catalog:":
   version "1.1.18"
   resolved "https://registry.yarnpkg.com/@better-fetch/fetch/-/fetch-1.1.18.tgz#4ddc65a703c65e6036947ff335e635a5a38e6225"
   integrity sha512-rEFOE1MYIsBmoMJtQbl32PGHHXuG2hDxvEd7rUHE0vCBoFQVSDqaVs9hkZEtHCxRoY+CljXKFCOuJ8uxqw1LcA==
@@ -983,7 +983,7 @@ balanced-match@^1.0.0:
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.2.tgz#e83e3a7e3f300b34cb9d87f615fa0cbf357690ee"
   integrity sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==
 
-better-call@^1.0.5:
+"better-call@catalog:":
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/better-call/-/better-call-1.0.7.tgz#48a6254b4fbe041a9516d12bcd9c8c87ab69d483"
   integrity sha512-p5kEthErx3HsW9dCCvvEx+uuEdncn0ZrlqrOG3TkR1aVYgynpwYbTVU90nY8/UwfMhROzqZWs8vryainSQxrNg==
@@ -2430,7 +2430,7 @@ zimmerframe@^1.1.2:
   resolved "https://registry.yarnpkg.com/zimmerframe/-/zimmerframe-1.1.2.tgz#5b75f1fa83b07ae2a428d51e50f58e2ae6855e5e"
   integrity sha512-rAbqEGa8ovJy4pyBxZM70hg4pE6gDgaQ0Sl9M3enG3I0d6H4XSAM3GeNGLKnsBpuijUow064sf7ww1nutC5/3w==
 
-zod@^3.24.1:
+zod@^3.24.1, zod@^3.24.2:
   version "3.24.2"
   resolved "https://registry.yarnpkg.com/zod/-/zod-3.24.2.tgz#8efa74126287c675e92f46871cfc8d15c34372b3"
   integrity sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==

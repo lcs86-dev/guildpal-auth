@@ -20,11 +20,13 @@ import { Resend } from 'resend';
 import pkg from 'pg';
 import { betterAuth } from '@atomrigslab/better-auth';
 import { siwe } from './plugins/wallet';
-import { bearer, customSession, jwt, openAPI } from '@atomrigslab/better-auth/plugins';
+import { bearer, customSession, emailOTP, jwt, openAPI } from '@atomrigslab/better-auth/plugins';
 // import { mobile } from "./plugins/mobile";
 
-import { GOOGLE_CLIENT_SECRET } from '$env/static/private';
+import { GOOGLE_CLIENT_SECRET, RESEND_API_KEY } from '$env/static/private';
 import { PUBLIC_GOOGLE_CLIENT_ID } from '$env/static/public';
+import { pga } from './plugins/pga';
+import { mobile } from './plugins/mobile';
 
 const { Pool } = pkg;
 export const db = new Pool({
@@ -75,23 +77,23 @@ export const auth = betterAuth({
 	},
 	plugins: [
 		siwe({ domain: 'https://guildpal.com' }),
-		// emailOTP({
-		//   async sendVerificationOTP({ email, otp, type }) {
-		//     const resend = new Resend("re_ARsd8UNU_4EBJhanhfpXHBxiALTZNZ7rA");
-		//     await resend.emails.send({
-		//       from: "onboarding@resend.dev",
-		//       to: email,
-		//       subject: "Verify your email address",
-		//       text: `Click the link to verify otp: ${otp}`,
-		//     });
-		//   },
-		//   // disableSignUp: true,
-		// }),
-		// pga(),
+		emailOTP({
+			async sendVerificationOTP({ email, otp, type }) {
+				const resend = new Resend(RESEND_API_KEY);
+				await resend.emails.send({
+					from: 'onboarding@resend.dev',
+					to: email,
+					subject: 'Verify your email address',
+					text: `Click the link to verify otp: ${otp}`
+				});
+			}
+			// disableSignUp: true,
+		}),
+		pga(),
 		bearer(),
 		openAPI(),
 		jwt(),
-		// mobile(),
+		mobile(),
 		customSession(async ({ user, session }) => {
 			const mids = (await db.query('SELECT * FROM pga WHERE "userId" = $1', [user.id])).rows;
 			const wallets = (await db.query('SELECT * FROM wallet WHERE "userId" = $1', [user.id])).rows;

@@ -24,6 +24,7 @@
 		"@tailwindcss/forms": "^0.5.9",
 		"@tailwindcss/typography": "^0.5.15",
 		"@tailwindcss/vite": "^4.0.0",
+		"@types/pg": "^8.11.11",
 		"eslint": "^9.18.0",
 		"eslint-config-prettier": "^10.0.1",
 		"eslint-plugin-svelte": "^3.0.0",
@@ -38,6 +39,10 @@
 		"vite": "^6.2.5"
 	},
 	"dependencies": {
-		"@atomrigslab/better-auth": "1.2.6-beta.3"
+		"@atomrigslab/better-auth": "1.2.6-beta.3",
+		"ethers": "^6.13.5",
+		"pg": "^8.14.1",
+		"resend": "^4.2.0",
+		"siwe": "^3.0.0"
 	}
 }

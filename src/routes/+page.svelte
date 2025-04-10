@@ -2,11 +2,6 @@
 	import Counter from './Counter.svelte';
 	import welcome from '$lib/images/svelte-welcome.webp';
 	import welcomeFallback from '$lib/images/svelte-welcome.png';
-	import { PUBLIC_CLIENT_ID } from '$env/static/public';
-
-	// import { env } from '$env/dynamic/public';
-	// import { env } from '$env/dynamic/private';
-	console.log('PUBLIC_CLIENT_ID in page.svelte', PUBLIC_CLIENT_ID);
 </script>
 
 <svelte:head>

@@ -32,6 +32,6 @@ You can preview the production build with `npm run preview`.
 ## Dockerize
 
 ```bash
-docker build -t my-sveltekit-app .
-docker run -p 3000:3000 my-sveltekit-app
+docker build -t guildpal-auth-server .
+docker run -p 3000:3000 guildpal-auth-server
 ```

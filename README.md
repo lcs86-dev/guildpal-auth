@@ -4,7 +4,7 @@ Everything you need to build a Svelte project, powered by [`sv`](https://github.
 
 ## Install
 
-Set .npmrc to install `@atomrigslab/better-auth`
+Add `.npmrc` in root directory to install `@atomrigslab/better-auth`
 
 ## Developing
 

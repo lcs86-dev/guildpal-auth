@@ -1,15 +1,7 @@
-// import { BetterAuthPlugin, generateRandomString } from "better-auth";
-// import {
-//   APIError,
-//   createAuthEndpoint,
-//   createAuthMiddleware,
-//   getSessionFromCtx,
-// } from "better-auth/api";
-// import { setSessionCookie } from "better-auth/cookies";
 import { getDate } from '$lib/utils/date';
 import { getEndpointResponse } from '$lib/utils/plugin-helper';
-import { APIError, generateRandomString, type BetterAuthPlugin } from '@atomrigslab/better-auth';
-import { getSessionFromCtx } from '@atomrigslab/better-auth/api';
+import { generateRandomString, type BetterAuthPlugin } from '@atomrigslab/better-auth';
+import { getSessionFromCtx, APIError } from '@atomrigslab/better-auth/api';
 import { setSessionCookie } from '@atomrigslab/better-auth/cookies';
 import { createAuthEndpoint, createAuthMiddleware } from '@atomrigslab/better-auth/plugins';
 import { z } from 'zod';

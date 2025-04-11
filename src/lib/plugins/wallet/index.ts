@@ -1,19 +1,3 @@
-// import { generateId } from "better-auth";
-// import {
-//   type BetterAuthPlugin,
-//   //   type User,
-//   // setSessionCookie
-// } from "better-auth";
-// import {
-//   APIError,
-//   createAuthEndpoint,
-//   getSessionFromCtx,
-// } from "better-auth/api";
-
-// Database Instance
-// import { db } from '@repo/db/drizzle';
-// import { eq, user as userTable } from '@@repo/db/schema';
-
 // Zod
 import { z } from 'zod';
 
@@ -24,12 +8,6 @@ import { generateId, type BetterAuthPlugin } from '@atomrigslab/better-auth';
 import { setSessionCookie } from '@atomrigslab/better-auth/cookies';
 import { getSessionFromCtx, APIError } from '@atomrigslab/better-auth/api';
 import { db } from '$lib/auth';
-// import { http, createConfig, getEnsName, getEnsAvatar } from '@wagmi/core';
-// import { mainnet, sepolia } from '@wagmi/core/chains';
-// import { setSessionCookie } from "better-auth/cookies";
-// import { db } from "@/lib/db";
-// import { ERROR_CODES } from "better-auth/plugins";
-// import { db } from "@/lib/auth";
 
 export interface SIWEPluginOptions {
 	domain: string;
@@ -39,30 +17,11 @@ export interface SIWEPluginOptions {
 	resources?: string[];
 }
 
-// export const wagmiConfig = createConfig({
-// 	chains: [mainnet, sepolia],
-// 	transports: {
-// 		[mainnet.id]: http('https://eth.llamarpc.com'),
-// 		[sepolia.id]: http()
-// 	}
-// });
-
 export const siwe = (options: SIWEPluginOptions) =>
 	({
 		id: 'siwe',
 		schema: {
-			// user: {
-			//   fields: {
-			//     address: {
-			//       type: "string",
-			//       required: false,
-			//       defaultValue: "",
-			//       // unique: true
-			//     },
-			//   },
-			// },
 			wallet: {
-				// modelName: "auth_wallet",
 				fields: {
 					userId: {
 						type: 'string',
@@ -86,7 +45,6 @@ export const siwe = (options: SIWEPluginOptions) =>
 			}
 		},
 		endpoints: {
-			// Generate nonce endpoint
 			nonce: createAuthEndpoint(
 				'/sign-in/nonce',
 				{
@@ -108,7 +66,6 @@ export const siwe = (options: SIWEPluginOptions) =>
 					return { nonce };
 				}
 			),
-			// Verify siwe payload
 			verify: createAuthEndpoint(
 				'/sign-in/verify',
 				{
@@ -121,32 +78,22 @@ export const siwe = (options: SIWEPluginOptions) =>
 					})
 				},
 				async (ctx) => {
-					console.log('body', ctx.body);
 					const { message, signature, walletName } = ctx.body;
-					// Parse and validate SIWE message
 					const siweMessage = new SiweMessage(message);
-					console.log('siweMessage', siweMessage);
 
 					try {
-						// Find stored nonce to check it's validity
 						const verification = await ctx.context.internalAdapter.findVerificationValue(
 							`siwe_${ctx.body.address.toLowerCase()}`
 						);
-						console.log('verification', verification);
-						// Ensure nonce is valid and not expired
 						if (!verification || new Date() > verification.expiresAt) {
 							throw new APIError('UNAUTHORIZED', {
 								message: 'Unauthorized: Invalid or expired nonce'
 							});
 						}
-						// Verify SIWE message
 						const verified = await siweMessage.verify({
 							signature,
 							nonce: verification.value
-							// domain: options.domain,
 						});
-						console.log('verified', verified);
-
 						if (!verified.success) {
 							throw new APIError('UNAUTHORIZED', {
 								message: 'Unauthorized: Invalid SIWE signature'
@@ -155,116 +102,35 @@ export const siwe = (options: SIWEPluginOptions) =>
 
 						// Delete used nonce to prevent replay attacks
 						// now moved to n after hook on /sign-out route
-						// await ctx.context.internalAdapter.deleteVerificationValue(
-						//   verification.id
-						// );
+						await ctx.context.internalAdapter.deleteVerificationValue(verification.id);
 
-						// const mid = 'fake-mid';
-						// let user = db
-						//   .prepare("SELECT * FROM user WHERE address = ?")
-						//   .get(ctx.body.address);
-						// let wallet = db
-						//   .prepare("SELECT * FROM wallet WHERE address = ?")
-						//   .get(ctx.body.address);
 						const wallet = (
 							await db.query('SELECT * FROM wallet WHERE address = $1', [ctx.body.address])
 						).rows[0];
-						console.log('existing wallet', {
-							value: wallet,
-							type: typeof wallet
-						});
 
 						let user = undefined;
-
 						if (!wallet) {
 							const tempEmail = `${ctx.body.address}@guildpal.com`;
-							// const ens = await getEnsName(wagmiConfig, {
-							// 	address: ctx.body.address as `0x${string}`,
-							// 	chainId: options.chainId ?? 1
-							// });
-
-							// const avatar = await getEnsAvatar(wagmiConfig, {
-							// 	name: (ens as string) ?? ctx.body.address,
-							// 	chainId: options.chainId ?? 1
-							// });
 
 							user = await ctx.context.internalAdapter.createUser({
-								// name: ens ?? ctx.body.address,
-								// email: tempEmail,
-								// avatar: avatar ?? ''
 								name: ctx.body.address,
 								email: tempEmail,
 								address: ctx.body.address,
 								avatar: ''
-								// mid: 'fake-mid'
 							});
 
 							const id = generateId();
 							const now = new Date().toISOString();
-							// const insertStatement = db
-							//   .prepare(
-							//     "INSERT INTO wallet (id, userId, name, address, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)"
-							//   )
-							//   .run(
-							//     id,
-							//     user.id,
-							//     walletName,
-							//     ctx.body.address,
-							//     new Date().toISOString(),
-							//     new Date().toISOString()
-							//   );
-							const result = await db.query(
+							await db.query(
 								'INSERT INTO wallet (id, "userId", name, address, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
 								[id, user.id, walletName, ctx.body.address, now, now]
 							);
-
-							// Return the inserted row
-							// user = result.rows[0];
-
-							// let user = db
-							//   .prepare("SELECT * FROM wallet WHERE address = ?")
-							//   .get(ctx.body.address);
-
-							// user = await ctx.context.internalAdapter.createUser({
-							// 	// name: ens ?? ctx.body.address,
-							// 	// email: tempEmail,
-							// 	// avatar: avatar ?? ''
-							// 	name: ctx.body.address,
-							// 	email: '',
-							// 	address: ctx.body.address,
-							// 	avatar: '',
-							// 	mid: 'fake-mid'
-							// });
 						} else {
-							console.log('wallet exist', {
-								address: ctx.body.address,
-								wallet
-							});
-							// user = await ctx.context.internalAdapter.updateUser(
-							//   user?.id,
-							//   {
-							//     address: ctx.body.address,
-							//   },
-							//   ctx
-							// );
-							// find user from address
-							// user = db
-							//   .prepare("SELECT * FROM user WHERE id = ?")
-							//   .get(wallet.userId);
-
-							// user = (
-							//   await db.query("SELECT * FROM user WHERE id = $1", [
-							//     wallet.userId,
-							//   ])
-							// ).rows[0];
-
 							user = (await db.query('SELECT * FROM "user" WHERE id = $1', [wallet.userId]))
 								.rows[0];
 						}
-						console.log('verify user', user);
 
 						const session = await ctx.context.internalAdapter.createSession(user?.id, ctx.request);
-
 						if (!session) {
 							return ctx.json(null, {
 								status: 500,
@@ -274,7 +140,6 @@ export const siwe = (options: SIWEPluginOptions) =>
 								}
 							});
 						}
-						console.log('session and user', { session, user });
 
 						await setSessionCookie(ctx, { session, user });
 
@@ -303,28 +168,21 @@ export const siwe = (options: SIWEPluginOptions) =>
 				},
 				async (ctx) => {
 					const { message, signature } = ctx.body;
-					// Parse and validate SIWE message
 					const siweMessage = new SiweMessage(message);
 
 					try {
-						// Find stored nonce to check it's validity
 						const verification = await ctx.context.internalAdapter.findVerificationValue(
 							`siwe_${ctx.body.address.toLowerCase()}`
 						);
-						// Ensure nonce is valid and not expired
 						if (!verification || new Date() > verification.expiresAt) {
 							throw new APIError('UNAUTHORIZED', {
 								message: 'Unauthorized: Invalid or expired nonce'
 							});
 						}
-						// Verify SIWE message
 						const verified = await siweMessage.verify({
 							signature,
 							nonce: verification.value
-							// domain: options.domain,
 						});
-						console.log('verified', verified);
-
 						if (!verified.success) {
 							throw new APIError('UNAUTHORIZED', {
 								message: 'Unauthorized: Invalid SIWE signature'
@@ -332,50 +190,22 @@ export const siwe = (options: SIWEPluginOptions) =>
 						}
 
 						const existingSession = await getSessionFromCtx(ctx);
-						console.log('existingSession', existingSession);
 						if (!existingSession) {
 							throw new APIError('BAD_REQUEST', {
 								message: ERROR_CODES.UNAUTHORIZED_SESSION
 							});
 						}
 
-						//   let wallet = db
-						//   .prepare("SELECT * FROM wallet WHERE address = ?")
-						//   .get(ctx.body.address);
-						// console.log("existing wallet", { value: wallet, type: typeof wallet });
-						// let user = undefined;
-
-						// const user = await ctx.context.internalAdapter.updateUser(
-						//   existingSession.user?.id,
-						//   {
-						//     address: ctx.body.address,
-						//   },
-						//   ctx
-						// );
-
 						const userId = existingSession.user.id;
 
 						const id = generateId();
 						const now = new Date().toISOString();
-						const result = await db.query(
+						await db.query(
 							'INSERT INTO wallet (id, "userId", name, address, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
 							[id, userId, ctx.body.walletName, ctx.body.address, now, now]
 						);
-						// const insertStatement = db
-						//   .prepare(
-						//     "INSERT INTO wallet (id, userId, name, address, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)"
-						//   )
-						//   .run(
-						//     id,
-						//     userId,
-						//     ctx.body.walletName,
-						//     ctx.body.address,
-						//     new Date().toISOString(),
-						//     new Date().toISOString()
-						//   );
 
 						const session = await ctx.context.internalAdapter.createSession(userId, ctx.request);
-
 						if (!session) {
 							return ctx.json(null, {
 								status: 500,

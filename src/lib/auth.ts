@@ -1,32 +1,10 @@
-// // import { betterAuth } from 'better-auth';
-// // import { openAPI } from 'better-auth/plugins';
-
-// import { betterAuth } from '@atomrigslab/better-auth';
-// import { openAPI } from '@atomrigslab/better-auth/plugins';
-
-// export const auth = betterAuth({
-// 	emailAndPassword: {
-// 		enabled: true,
-// 		autoSignIn: false //defaults to true
-// 	},
-// 	plugins: [openAPI()]
-// });
-
-// import { betterAuth } from "better-auth";
-// import { bearer, openAPI, customSession, jwt } from "better-auth/plugins";
 import { Resend } from 'resend';
-// import { emailOTP, siwe } from "@/lib/plugins";
-// import { pga } from "./plugins/pga";
 import pkg from 'pg';
 import { betterAuth } from '@atomrigslab/better-auth';
-import { siwe } from './plugins/wallet';
 import { bearer, customSession, emailOTP, jwt, openAPI } from '@atomrigslab/better-auth/plugins';
-// import { mobile } from "./plugins/mobile";
-
-import { GOOGLE_CLIENT_SECRET, RESEND_API_KEY } from '$env/static/private';
+import { GOOGLE_CLIENT_SECRET, RESEND_API_KEY, BETTER_AUTH_SECRET } from '$env/static/private';
 import { PUBLIC_GOOGLE_CLIENT_ID } from '$env/static/public';
-import { pga } from './plugins/pga';
-import { mobile } from './plugins/mobile';
+import { pga, mobile, siwe } from './plugins';
 
 const { Pool } = pkg;
 export const db = new Pool({
@@ -35,38 +13,29 @@ export const db = new Pool({
 
 export const auth = betterAuth({
 	appName: 'Better Auth Demo',
+	secret: BETTER_AUTH_SECRET,
 	session: {
 		cookieCache: {
 			enabled: true,
 			maxAge: 5 * 60 // Cache duration in seconds
 		}
-		// modelName: "auth_session",
 	},
 	user: {
 		changeEmail: {
 			enabled: true
 		}
-		// modelName: "auth_user",
 	},
 	account: {
 		accountLinking: {
 			trustedProviders: ['google']
 		}
-		// modelName: "auth_account",
 	},
-	// verification: {
-	// modelName: "auth_verification",
-	// },
-	// jwks: {
-	// modelName: "auth_jwks",
-	// },
 	database: db,
 	trustedOrigins: ['chrome-extension://dgoifpeldfmnlbangejfelgmgibpokej', 'http://localhost:3000'],
 	socialProviders: {
 		google: {
 			clientId: PUBLIC_GOOGLE_CLIENT_ID || '',
 			clientSecret: GOOGLE_CLIENT_SECRET || ''
-			// disableImplicitSignUp: true,
 		}
 	},
 	onAPIError: {
@@ -87,7 +56,6 @@ export const auth = betterAuth({
 					text: `Click the link to verify otp: ${otp}`
 				});
 			}
-			// disableSignUp: true,
 		}),
 		pga(),
 		bearer(),

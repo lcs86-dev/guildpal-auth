@@ -1,6 +1,4 @@
-// import { betterFetch } from "@better-fetch/fetch";
-// import { APIError } from "better-call";
-import { parseState, type BetterAuthPlugin } from '@atomrigslab/better-auth';
+import { parseState, type BetterAuthPlugin, type OAuth2Tokens } from '@atomrigslab/better-auth';
 import { createAuthEndpoint, HIDE_METADATA } from '@atomrigslab/better-auth/plugins';
 import { z } from 'zod';
 
@@ -80,8 +78,7 @@ export const oAuthLink = (options?: any) => {
 						throw redirectOnError('oauth_provider_not_found');
 					}
 
-					// let tokens: OAuth2Tokens;
-					let tokens: any;
+					let tokens: OAuth2Tokens;
 					try {
 						tokens = await provider.validateAuthorizationCode({
 							code: code,
@@ -94,7 +91,6 @@ export const oAuthLink = (options?: any) => {
 						throw redirectOnError('invalid_code');
 					}
 					const userInfo = await provider.getUserInfo(tokens).then((res) => res?.user);
-
 					if (!userInfo) {
 						c.context.logger.error('Unable to get user info');
 						return redirectOnError('unable_to_get_user_info');
@@ -114,7 +110,6 @@ export const oAuthLink = (options?: any) => {
 
 					if (link) {
 						const existingAccount = await c.context.internalAdapter.findAccount(userInfo.id);
-
 						if (existingAccount) {
 							if (existingAccount.userId.toString() !== link.userId.toString()) {
 								return redirectOnError('account_already_linked_to_different_user');
@@ -131,7 +126,6 @@ export const oAuthLink = (options?: any) => {
 							},
 							c
 						);
-
 						if (!newAccount) {
 							return redirectOnError('unable_to_link_account');
 						}
@@ -144,7 +138,6 @@ export const oAuthLink = (options?: any) => {
 							},
 							c
 						);
-
 						if (!updateduser) {
 							return redirectOnError('unable_to_update_user');
 						}
@@ -158,43 +151,6 @@ export const oAuthLink = (options?: any) => {
 						}
 						throw c.redirect(toRedirectTo);
 					}
-
-					// const result = await handleOAuthUserInfo(c, {
-					//     userInfo: {
-					//         ...userInfo,
-					//         email: userInfo.email,
-					//         name: userInfo.name || userInfo.email,
-					//     },
-					//     account: {
-					//         providerId: provider.id,
-					//         accountId: userInfo.id,
-					//         ...tokens,
-					//         scope: tokens.scopes?.join(","),
-					//     },
-					//     callbackURL,
-					//     disableSignUp:
-					//         (provider.disableImplicitSignUp && !requestSignUp) ||
-					//         provider.options?.disableSignUp,
-					// });
-					// if (result.error) {
-					//     c.context.logger.error(result.error.split(" ").join("_"));
-					//     return redirectOnError(result.error.split(" ").join("_"));
-					// }
-					// const { session, user } = result.data!;
-					// await setSessionCookie(c, {
-					//     session,
-					//     user,
-					// });
-					// let toRedirectTo: string;
-					// try {
-					//     const url = result.isRegister ? newUserURL || callbackURL : callbackURL;
-					//     toRedirectTo = url.toString();
-					// } catch {
-					//     toRedirectTo = result.isRegister
-					//         ? newUserURL || callbackURL
-					//         : callbackURL;
-					// }
-					// throw c.redirect(toRedirectTo);
 				}
 			)
 		},

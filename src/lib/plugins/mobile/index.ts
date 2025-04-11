@@ -1,19 +1,3 @@
-// import { BASE_ERROR_CODES, generateId, handleOAuthUserInfo } from "better-auth";
-// import {
-//   type BetterAuthPlugin,
-//   //   type User,
-//   // setSessionCookie
-// } from "better-auth";
-// import {
-//   APIError,
-//   createAuthEndpoint,
-//   getSessionFromCtx,
-// } from "better-auth/api";
-// import {} from // BetterAuthPlugin,
-// // createAuthEndpoint,
-// // ERROR_CODES,
-// "better-auth/plugins";
-
 import { APIError } from '@atomrigslab/better-auth/api';
 import { BASE_ERROR_CODES, handleOAuthUserInfo } from '@atomrigslab/better-auth';
 import { createAuthEndpoint, type BetterAuthPlugin } from '@atomrigslab/better-auth/plugins';
@@ -21,65 +5,25 @@ import { z } from 'zod';
 import { PUBLIC_MOBILE_GOOGLE_CLIENT_ID } from '$env/static/public';
 import { setSessionCookie } from '@atomrigslab/better-auth/cookies';
 
-// // Database Instance
-// // import { db } from '@repo/db/drizzle';
-// // import { eq, user as userTable } from '@@repo/db/schema';
-
-// // Zod
-// import { z } from "zod";
-
-// // SIWE deps
-// import { SiweMessage, generateNonce } from "siwe";
-// // import { http, createConfig, getEnsName, getEnsAvatar } from '@wagmi/core';
-// // import { mainnet, sepolia } from '@wagmi/core/chains';
-// import { setSessionCookie } from "better-auth/cookies";
-// // import { db } from "@/lib/db";
-// import { ERROR_CODES } from "better-auth/plugins";
-// import { db } from "@/lib/auth";
-
-// export interface SIWEPluginOptions {
-//   domain: string;
-//   // Optional configuration
-//   chainId?: 1 | 11155111 | undefined;
-//   version?: string;
-//   resources?: string[];
-// }
-
-// export const wagmiConfig = createConfig({
-// 	chains: [mainnet, sepolia],
-// 	transports: {
-// 		[mainnet.id]: http('https://eth.llamarpc.com'),
-// 		[sepolia.id]: http()
-// 	}
-// });
-
 export const mobile = () =>
 	({
 		id: 'mobile',
 		endpoints: {
-			// Generate nonce endpoint
 			mobileSocialSignIn: createAuthEndpoint(
 				'/sign-in/social-mobile',
 				{
 					method: 'POST',
 					body: z.object({
-						// provider: SocialProviderListEnum,
 						provider: z.any(),
 						idToken: z.object({
 							token: z.string({
 								description: 'ID token from the provider'
 							}),
-							/**
-							 * Access token from the provider
-							 */
 							accessToken: z
 								.string({
 									description: 'Access token from the provider'
 								})
 								.optional(),
-							/**
-							 * Refresh token from the provider
-							 */
 							refreshToken: z
 								.string({
 									description: 'Refresh token from the provider'
@@ -122,7 +66,6 @@ export const mobile = () =>
 					}
 				},
 				async (c) => {
-					console.log('mobile plugin social sign in starts!');
 					const provider = c.context.socialProviders.find((p) => p.id === c.body.provider);
 					if (!provider) {
 						c.context.logger.error(
@@ -154,7 +97,6 @@ export const mobile = () =>
 						});
 					}
 					const { token, nonce } = c.body.idToken;
-					console.log('before mobile provider verifyIdToken', provider);
 					const valid = await provider.verifyIdToken(
 						token,
 						nonce,
@@ -226,20 +168,6 @@ export const mobile = () =>
 							updatedAt: data.data!.user.updatedAt
 						}
 					});
-
-					// const { codeVerifier, state } = await generateState(c);
-					// const url = await provider.createAuthorizationURL({
-					//   state,
-					//   codeVerifier,
-					//   redirectURI: `${c.context.baseURL}/callback/${provider.id}`,
-					//   scopes: c.body.scopes,
-					//   loginHint: c.body.loginHint,
-					// });
-
-					// return c.json({
-					//   url: url.toString(),
-					//   redirect: !c.body.disableRedirect,
-					// });
 				}
 			)
 		}

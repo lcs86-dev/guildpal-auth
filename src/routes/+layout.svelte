@@ -24,10 +24,11 @@
 		<!-- Container with rounded corners for the image -->
 		<div class="relative h-full w-full rounded-3xl overflow-hidden shadow-2xl">
 			<!-- Background image -->
-			<div 
-				class="absolute inset-0 bg-cover bg-center" 
-				style="background-image: url('/images/welcome_guildpal_bg.png');"
-			></div>
+			<img 
+				src="/images/welcome_guildpal_bg.png"
+				alt="GuildPal Background"
+				class="absolute inset-0 w-full h-full object-fill"
+			/>
 		</div>
 	</div>
 	

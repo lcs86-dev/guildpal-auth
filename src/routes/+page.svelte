@@ -29,6 +29,7 @@
 	let loadingWalletType = '';
 	let walletError = '';
 	let showWalletError = false;
+	let isSocialLoading = false;
 
 	// 데모용 올바른 인증 코드
 	const correctCode = '123456';
@@ -172,6 +173,35 @@
 		isWalletLoading = false;
 	}
 
+	// Google 로그인 처리
+	async function handleGoogleSignIn(): Promise<void> {
+		try {
+			isSocialLoading = true;
+			
+			const signInResult = await signIn.social({
+				provider: "google",
+				callbackURL: window.location.origin + "/sign-in-success?login_method=google",
+			});
+			
+			// 소셜 로그인은 리디렉션을 사용하므로 여기에는 도달하지 않음
+			// 리디렉션이 발생하지 않는 경우를 위한 처리
+			// const session = await client.getSession();
+			// if (session.data) {
+			// 	if (window.pga) {
+			// 		window.pga.helpers.setAuthToken(session.data);
+			// 		await pga.addMid({ encryptedMid: "fake-mid-2" });
+			// 	}
+				
+			// 	goto("/sign-in-success?login_method=google", { replaceState: true });
+			// }
+		} catch (error) {
+			console.error('Google sign-in error:', error);
+			walletError = 'Failed to sign in with Google. Please try again.';
+			showWalletError = true;
+			isSocialLoading = false; // 오류 발생 시에만 로딩 상태 해제
+		}
+	}
+
 	// 이메일 폼 이벤트 핸들러
 	function onVerifyEmail(event: CustomEvent): void {
 		console.log('Verify email event received:', event.detail);
@@ -192,8 +222,8 @@
 </script>
 
 <div class="w-full max-w-md mx-auto relative">
-	{#if isWalletLoading}
-		<WalletSignInOverlay walletName={loadingWalletType} />
+	{#if isWalletLoading || isSocialLoading}
+		<WalletSignInOverlay walletName={isSocialLoading ? 'Google' : loadingWalletType} />
 	{/if}
 
 	<ErrorNotification 
@@ -230,7 +260,7 @@
 		bind:isSigningIn
 		bind:showSuccessMessage
 		bind:verificationFailed
-		disabled={isWalletLoading}
+		disabled={isWalletLoading || isSocialLoading}
 		on:verify-email={onVerifyEmail}
 		on:sign-in={onSignIn}
 	/>
@@ -240,6 +270,27 @@
 		<div class="flex-1 h-px bg-[#333333]"></div>
 		<div class="px-4 text-sm text-[#A1A1AA]">or</div>
 		<div class="flex-1 h-px bg-[#333333]"></div>
+	</div>
+	
+	<!-- Google login button -->
+	<div class="mb-3.5">
+		<button
+			class="w-full py-3.5 px-5 rounded-xl border border-[#333333] bg-[#1A1A1A] text-white font-medium flex items-center justify-between hover:bg-[#262626] transition text-base disabled:opacity-70 disabled:cursor-not-allowed disabled:bg-[#111111] disabled:hover:bg-[#111111]"
+			on:click={handleGoogleSignIn}
+			disabled={isWalletLoading || isSocialLoading}
+		>
+			{#if isSocialLoading}
+				<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+					<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+				</svg>
+			{:else}
+				<img src="/images/google.png" alt="Google" class="w-5 h-5" />
+			{/if}
+			<span class="flex-grow text-center">
+				Sign in with Google
+			</span>
+		</button>
 	</div>
 
 	<!-- Wallet Sign In Buttons -->

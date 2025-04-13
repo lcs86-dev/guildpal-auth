@@ -68,6 +68,7 @@ export const emailOTP = (options: EmailOTPOptions) => {
 		INVALID_OTP: 'invalid otp',
 		INVALID_EMAIL: 'invalid email',
 		USER_NOT_FOUND: 'user not found',
+		EMAIL_ALREADY_LINKED: 'email already linked',
 		SESSION_NOT_FOUND: 'session not found'
 	} as const;
 	return {
@@ -321,7 +322,7 @@ export const emailOTP = (options: EmailOTPOptions) => {
 					const user = await ctx.context.internalAdapter.findUserByEmail(email);
 					if (!user) {
 						throw new APIError('BAD_REQUEST', {
-							message: ERROR_CODES.USER_NOT_FOUND
+							message: ERROR_CODES.EMAIL_ALREADY_LINKED
 						});
 					}
 					const updatedUser = await ctx.context.internalAdapter.updateUser(
@@ -562,6 +563,11 @@ export const emailOTP = (options: EmailOTPOptions) => {
 					}
 					await ctx.context.internalAdapter.deleteVerificationValue(verificationValue.id);
 					const user = await ctx.context.internalAdapter.findUserByEmail(email);
+					if (user) {
+						throw new APIError('BAD_REQUEST', {
+							message: ERROR_CODES.USER_NOT_FOUND
+						});
+					}
 					if (!user) {
 						const existingSession = await getSessionFromCtx(ctx);
 						if (!existingSession) {

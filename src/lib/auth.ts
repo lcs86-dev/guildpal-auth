@@ -1,10 +1,10 @@
 import { Resend } from 'resend';
 import pkg from 'pg';
 import { betterAuth } from '@atomrigslab/better-auth';
-import { bearer, customSession, emailOTP, jwt, openAPI } from '@atomrigslab/better-auth/plugins';
+import { bearer, customSession, jwt, openAPI } from '@atomrigslab/better-auth/plugins';
 import { GOOGLE_CLIENT_SECRET, RESEND_API_KEY, BETTER_AUTH_SECRET } from '$env/static/private';
 import { PUBLIC_GOOGLE_CLIENT_ID } from '$env/static/public';
-import { pga, mobile, siwe, oAuthLink } from './plugins';
+import { pga, mobile, siwe, oAuthLink, emailOTP } from './plugins';
 
 const { Pool } = pkg;
 export const db = new Pool({

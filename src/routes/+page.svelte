@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { client, pga, signIn } from '$lib/auth-client';
+	import { client, pga, signIn, emailOtp } from '$lib/auth-client';
 	import { onMount } from 'svelte';
 	import { walletSignIn } from '$lib/walletUtils';
 	import { 
@@ -22,6 +22,7 @@
 	let isSigningIn = false;
 	let showSuccessMessage = false;
 	let verificationFailed = false;
+	let loginError = '';
 
 	// 지갑 관련 상태
 	let isWalletLoading = false;
@@ -33,7 +34,7 @@
 	const correctCode = '123456';
 
 	// 이메일 인증 처리
-	function handleVerifyEmail(): void {
+	async function handleVerifyEmail(): Promise<void> {
 		console.log('handleVerifyEmail called with email:', email);
 		
 		// 리셋 상태
@@ -41,39 +42,45 @@
 		verificationFailed = false;
 		isEmailVerified = false;
 
-		// API 호출 시뮬레이션
+		// API 호출
 		isVerifying = true;
-
-		// 지연 시뮬레이션
-		setTimeout(() => {
-			console.log('Verifying email:', email);
-			isVerifying = false;
-
-			// 성공 또는 실패 시뮬레이션 (90% 성공률)
-			const isSuccess = Math.random() < 0.9;
-			console.log('Verification result:', isSuccess ? 'success' : 'failed');
-
-			if (isSuccess) {
-				// 성공 케이스
-				isEmailVerified = true;
-				showSuccessMessage = true;
-
-				// 3초 후 성공 메시지 숨김
-				setTimeout(() => {
-					showSuccessMessage = false;
-				}, 3000);
-			} else {
-				// 실패 케이스
+		
+		try {
+			const { data, error } = await emailOtp.sendVerificationOtp({
+				email,
+				type: "sign-in"
+			});
+			
+			if (error) {
 				verificationFailed = true;
-				emailError = 'Failed to send verification code. Please try again.';
+				emailError = error?.message || 'Failed to send verification code';
+				return;
 			}
-		}, 1500);
+			
+			// 성공 케이스
+			isEmailVerified = true;
+			showSuccessMessage = true;
+			
+			console.log("sendVerificationOtp result", { data, error });
+			
+			// 3초 후 성공 메시지 숨김
+			setTimeout(() => {
+				showSuccessMessage = false;
+			}, 3000);
+		} catch (error) {
+			console.error(error);
+			verificationFailed = true;
+			emailError = 'Failed to send verification code. Please try again.';
+		} finally {
+			isVerifying = false;
+		}
 	}
 
 	// 이메일 로그인 처리
-	function handleSignIn(): void {
+	async function handleSignIn(): Promise<void> {
 		// 오류 리셋
 		codeError = '';
+		loginError = '';
 
 		// 이메일 인증 검증
 		if (!isEmailVerified) {
@@ -95,21 +102,41 @@
 		// 로그인 프로세스 시작
 		isSigningIn = true;
 
-		// API 호출 지연 시뮬레이션
-		setTimeout(() => {
-			// 코드 검증 (데모용)
-			if (code !== correctCode) {
-				isSigningIn = false;
-				codeError = 'Invalid verification code. Please try again.';
+		try {
+			// 실제 API 호출로 로그인
+			const { data, error } = await signIn.emailOtp({
+				email,
+				otp: code
+			});
+			
+			if (error) {
+				codeError = `Sign in failed: ${error.message}`;
 				return;
 			}
-
-			// 성공 - 리다이렉트
-			console.log('Successfully signed in with:', { email, code, rememberMe, autoLogin });
-
-			// 계정 페이지로 이동
-			window.location.href = '/account';
-		}, 1000);
+			
+			// 세션 가져오기
+			const session = await client.getSession();
+			if (session.error) {
+				codeError = 'Failed to get session. Please try again.';
+				return;
+			}
+			
+			if (window.pga) {
+				window.pga.helpers.setAuthToken(session.data);
+				pga.addMid({ encryptedMid: 'fake-mid-1' });
+			}
+			
+			// 성공 페이지로 이동
+			const url = new URL('/sign-in-success', window.location.origin);
+			url.searchParams.set('login_method', 'email');
+			
+			goto(url.toString(), { replaceState: true });
+		} catch (error) {
+			console.error('Email sign-in error:', error);
+			codeError = 'An error occurred during sign in. Please try again.';
+		} finally {
+			isSigningIn = false;
+		}
 	}
 
 	// 오류 닫기 핸들러

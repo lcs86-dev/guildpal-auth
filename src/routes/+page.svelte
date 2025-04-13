@@ -4,6 +4,7 @@
 	import { BrowserProvider, ethers } from 'ethers';
 	import { SiweMessage } from 'siwe';
 	import { onMount } from 'svelte';
+	import WalletSignInOverlay from '../components/WalletSignInOverlay.svelte';
 
 	let email = '';
 	let code = '';
@@ -16,6 +17,8 @@
 	let isSigningIn = false;
 	let showSuccessMessage = false;
 	let verificationFailed = false;
+	let isWalletLoading = false;
+	let loadingWalletType = '';
 
 	// 데모용 올바른 인증 코드
 	const correctCode = '123456';
@@ -112,10 +115,13 @@
 	}
 
 	const handleRoninSignIn = async () => {
-		// setIsLoading(true);
+		isWalletLoading = true;
+		loadingWalletType = 'Ronin Wallet';
+		
 		try {
 			if (!window?.ronin?.provider) {
 				alert('no ronin provider found');
+				isWalletLoading = false;
 				return;
 			}
 
@@ -131,6 +137,7 @@
 			const nonce = await signIn.nonce({ address });
 			if (nonce.error) {
 				alert('fetching nonce failed');
+				isWalletLoading = false;
 				return;
 			}
 
@@ -159,7 +166,10 @@
 			});
 
 			const session = await client.getSession();
-			if (session.error) return;
+			if (session.error) {
+				isWalletLoading = false;
+				return;
+			}
 			if (window.pga) {
 				window.pga.helpers.setAuthToken(session.data);
 				pga.addMid({ encryptedMid: 'fake-mid-1' });
@@ -173,13 +183,42 @@
 			});
 		} catch (error) {
 			console.error(error);
-		} finally {
-			// setIsLoading(false);
+			isWalletLoading = false;
+		}
+	};
+	
+	const handleMetamaskSignIn = async () => {
+		isWalletLoading = true;
+		loadingWalletType = 'MetaMask';
+		
+		try {
+			if (!window?.ethereum) {
+				alert('MetaMask not found');
+				isWalletLoading = false;
+				return;
+			}
+			
+			// MetaMask sign-in implementation
+			// (Similar to Ronin implementation)
+			
+			// For demo purposes, just simulate a delay
+			setTimeout(() => {
+				isWalletLoading = false;
+				// Implement actual MetaMask login logic here
+			}, 2000);
+			
+		} catch (error) {
+			console.error(error);
+			isWalletLoading = false;
 		}
 	};
 </script>
 
-<div class="w-full max-w-md mx-auto">
+<div class="w-full max-w-md mx-auto relative">
+	{#if isWalletLoading}
+		<WalletSignInOverlay walletName={loadingWalletType} />
+	{/if}
+
 	<!-- Logo and Text -->
 	<div class="flex flex-col items-center mb-10">
 		<!-- GuildPal logo image -->
@@ -213,12 +252,12 @@
 									: 'border-[#333333] focus:ring-[#4CAF50]'
 						} 
 						text-white focus:outline-none focus:ring-2 pr-32 text-base`}
-					disabled={isVerifying || isEmailVerified}
+					disabled={isVerifying || isEmailVerified || isWalletLoading}
 				/>
 				<button
 					type="button"
 					on:click={handleVerifyEmail}
-					disabled={isVerifying || isEmailVerified}
+					disabled={isVerifying || isEmailVerified || isWalletLoading}
 					class={`absolute right-2.5 top-2 bottom-2 px-4 rounded-lg transition flex items-center justify-center min-w-[105px]
 						${
 							isVerifying
@@ -313,7 +352,7 @@
 				class={`w-full p-3.5 pl-4 rounded-xl bg-[#1A1A1A] border 
 					${codeError ? 'border-red-500 focus:ring-red-500' : 'border-[#333333] focus:ring-[#4CAF50]'} 
 					text-white focus:outline-none focus:ring-2 text-base`}
-				disabled={!isEmailVerified || isSigningIn}
+				disabled={!isEmailVerified || isSigningIn || isWalletLoading}
 			/>
 
 			{#if codeError}
@@ -330,34 +369,13 @@
 			{/if}
 		</div>
 
-		<!-- Checkboxes -->
-		<!-- <div class="flex items-center justify-between text-sm text-[#A1A1AA] py-1 px-1">
-			<label class="flex items-center space-x-2 cursor-pointer">
-				<input
-					type="checkbox"
-					bind:checked={rememberMe}
-					class="rounded text-[#4CAF50] focus:ring-[#4CAF50] bg-[#1A1A1A] border-[#333333] h-4 w-4"
-				/>
-				<span>Remember Me</span>
-			</label>
-
-			<label class="flex items-center space-x-2 cursor-pointer">
-				<input
-					type="checkbox"
-					bind:checked={autoLogin}
-					class="rounded text-[#4CAF50] focus:ring-[#4CAF50] bg-[#1A1A1A] border-[#333333] h-4 w-4"
-				/>
-				<span>Auto Login</span>
-			</label>
-		</div> -->
-
 		<!-- Sign in button -->
 		<button
 			type="submit"
-			disabled={!isEmailVerified || isSigningIn}
+			disabled={!isEmailVerified || isSigningIn || isWalletLoading}
 			class={`w-full py-3.5 rounded-xl text-white font-medium transition mt-2 text-base
 				${
-					!isEmailVerified
+					!isEmailVerified || isWalletLoading
 						? 'bg-[#4CAF50]/50 cursor-not-allowed'
 						: isSigningIn
 							? 'bg-[#4CAF50]/70 cursor-wait'
@@ -400,34 +418,42 @@
 		<!-- Google login -->
 		<button
 			class="w-full py-3.5 px-5 rounded-xl border border-[#333333] bg-[#1A1A1A] text-white font-medium flex items-center justify-between hover:bg-[#262626] transition text-base"
+			disabled={isWalletLoading}
 		>
 			<img src="/images/google.png" alt="Google" class="w-5 h-5" />
 			<span class="flex-grow text-center">Sign in with Google</span>
 		</button>
 
-		<!-- Facebook login -->
-		<!-- <button
-			class="w-full py-3.5 px-5 rounded-xl border border-[#333333] bg-[#1A1A1A] text-white font-medium flex items-center justify-between hover:bg-[#262626] transition text-base"
-		>
-			<img src="/images/facebook.png" alt="Facebook" class="w-5 h-5" />
-			<span class="flex-grow text-center">Sign in with Facebook</span>
-		</button> -->
-
 		<!-- Ronin Wallet login -->
 		<button
 			class="w-full py-3.5 px-5 rounded-xl border border-[#333333] bg-[#1A1A1A] text-white font-medium flex items-center justify-between hover:bg-[#262626] transition text-base"
 			on:click={handleRoninSignIn}
+			disabled={isWalletLoading}
 		>
 			<img src="/images/ronin.png" alt="Ronin Wallet" class="w-5 h-5" />
-			<span class="flex-grow text-center">Sign in with Ronin Wallet</span>
+			<span class="flex-grow text-center">
+				{#if isWalletLoading && loadingWalletType === 'Ronin Wallet'}
+					Signing in...
+				{:else}
+					Sign in with Ronin Wallet
+				{/if}
+			</span>
 		</button>
 
 		<!-- Metamask login -->
 		<button
 			class="w-full py-3.5 px-5 rounded-xl border border-[#333333] bg-[#1A1A1A] text-white font-medium flex items-center justify-between hover:bg-[#262626] transition text-base"
+			on:click={handleMetamaskSignIn}
+			disabled={isWalletLoading}
 		>
 			<img src="/images/metamask.png" alt="Metamask" class="w-5 h-5" />
-			<span class="flex-grow text-center">Sign in with Metamask</span>
+			<span class="flex-grow text-center">
+				{#if isWalletLoading && loadingWalletType === 'MetaMask'}
+					Signing in...
+				{:else}
+					Sign in with MetaMask
+				{/if}
+			</span>
 		</button>
 	</div>
 </div>

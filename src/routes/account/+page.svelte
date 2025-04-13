@@ -28,6 +28,7 @@
 	let session: any = null;
 	let isLoading = true;
 	let userEmail = '';
+	let isCheckingAuth = true;
 	
 	// Connection state management
 	let isConnectingWallet = false;
@@ -38,6 +39,17 @@
 	let showError = false;
 	let errorTitle = '';
 	let errorMessage = '';
+
+	// 로그인 상태 확인
+	async function checkAuthStatus(): Promise<boolean> {
+		try {
+			const result = await client.getSession();
+			return !!result.data?.user;
+		} catch (error) {
+			console.error('Failed to check auth status:', error);
+			return false;
+		}
+	}
 
 	// Fetch user information
 	async function fetchUser() {
@@ -171,17 +183,37 @@
 	}
 
 	// Load user information on page load
-	onMount(() => {
-		fetchUser();
+	onMount(async () => {
+		isCheckingAuth = true;
 		
-		// 페이지 이탈 시 상태 초기화
-		return () => {
-			isConnectingGoogle = false;
-			isConnectingWallet = false;
-		};
+		try {
+			// 로그인 상태 확인
+			const isLoggedIn = await checkAuthStatus();
+			
+			// 로그인 상태가 아니면 홈 페이지로 리디렉션
+			if (!isLoggedIn) {
+				console.log('Not authenticated, redirecting to home page');
+				goto('/', { replaceState: true });
+				return;
+			}
+			
+			// 로그인 상태이면 계정 정보 가져오기
+			console.log('User is authenticated, loading account information');
+			fetchUser();
+		} catch (error) {
+			console.error('Error checking auth status:', error);
+			goto('/', { replaceState: true });
+		} finally {
+			isCheckingAuth = false;
+		}
 	});
 </script>
 
+{#if isCheckingAuth}
+<div class="fixed inset-0 bg-black flex items-center justify-center z-50">
+	<div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#4CAF50]"></div>
+</div>
+{:else}
 <div class="w-full max-w-md mx-auto bg-black">
 	<!-- Header with logo - fixed height to prevent layout shift -->
 	<div class="w-full h-16 mb-8 flex items-center">
@@ -435,3 +467,4 @@
 		onClose={closeErrorNotification} 
 	/>
 </div>
+{/if}

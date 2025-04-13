@@ -32,6 +32,7 @@
 	// Connection state management
 	let isConnectingWallet = false;
 	let connectingWalletName = '';
+	let isConnectingGoogle = false;  // Google 연결 상태 관리를 위한 변수 추가
 	
 	// Error state management
 	let showError = false;
@@ -101,8 +102,11 @@
 
 	// Connect Google account
 	async function connectGoogle() {
+		if (isConnectingGoogle) return; // 이미 연결 중이면 중복 실행 방지
+		
 		try {
-			isConnectingWallet = true; // Reusing the same state management for all connection types
+			isConnectingGoogle = true;
+			isConnectingWallet = true; // 전체 오버레이 표시를 위해 유지
 			
 			await linkSocial({
 				provider: 'google',
@@ -112,9 +116,10 @@
 		} catch (error) {
 			console.error('Failed to connect Google account:', error);
 			showErrorNotification('Connection Failed', 'Failed to connect Google account.');
-		} finally {
+			isConnectingGoogle = false;
 			isConnectingWallet = false;
 		}
+		// 리디렉션이 발생하므로 finally 블록은 실행되지 않음
 	}
 
 	// Connect wallet
@@ -168,6 +173,12 @@
 	// Load user information on page load
 	onMount(() => {
 		fetchUser();
+		
+		// 페이지 이탈 시 상태 초기화
+		return () => {
+			isConnectingGoogle = false;
+			isConnectingWallet = false;
+		};
 	});
 </script>
 
@@ -326,8 +337,14 @@
 								<button
 									on:click={() => handleConnect('google')}
 									class="text-[#4CAF50] text-sm hover:opacity-80 transition flex items-center"
+									disabled={isConnectingGoogle}
 								>
-									Connect <span class="ml-1">+</span>
+									{#if isConnectingGoogle}
+										<span class="inline-block w-4 h-4 border-2 border-[#4CAF50] border-t-transparent rounded-full animate-spin mr-2"></span>
+										Connecting...
+									{:else}
+										Connect <span class="ml-1">+</span>
+									{/if}
 								</button>
 							{:else}
 								<div class="text-[#A1A1AA] text-sm">Connected</div>

@@ -185,8 +185,7 @@
 		try {
 			isSocialLoading = true;
 			
-			// Social 로그인은 기본적으로 리디렉션이 발생하므로
-			// 여기서 URL 구성 (email 파라미터는 소셜 로그인 후에 추가됨)
+			// Google 로그인 성공 후 사용자 정보를 얻기 위한 콜백 URL 설정
 			const callbackUrl = new URL('/sign-in-success', window.location.origin);
 			callbackUrl.searchParams.set('login_method', 'google');
 			

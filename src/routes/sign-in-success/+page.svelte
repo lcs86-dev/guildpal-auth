@@ -3,6 +3,8 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
+	import { goto } from '$app/navigation';
+	import { client, pga } from '$lib/auth-client';
 
 	let email = '';
 	let successTitle = 'You have successfully logged in.';
@@ -10,55 +12,94 @@
 	let displayInfo = ''; // 표시할 정보 (이메일 또는 지갑 주소)
 	let isLoading = true; // 로딩 상태 추가
 
+	// 세션 정보 초기화 함수
+	async function initialize() {
+		try {
+			// 로그인 방식 가져오기
+			const loginMethod = $page.url.searchParams.get('login_method') || 'email';
+			
+			// 세션 정보 가져오기
+			const session = await client.getSession();
+			if (session.error) {
+				console.error('Session error:', session.error);
+				return;
+			}
+			
+			// 사용자 이메일 설정 (세션에서 가져옴)
+			if (session.data?.user?.email) {
+				email = session.data.user.email;
+			} else {
+				// URL 파라미터에서 이메일 가져옴 (fallback)
+				email = $page.url.searchParams.get('email') || '';
+			}
+			
+			// 지갑 주소 마스킹 함수
+			const maskAddress = (address: string): string => {
+				if (!address || address.length < 10) return address;
+				return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+			};
+			
+			// 지갑 로그인인 경우 세션에서 주소 가져오기
+			let walletAddress = '';
+			if (loginMethod === 'ronin' || loginMethod === 'metamask') {
+				// 지갑 정보 찾기
+				const foundWallet = session.data?.wallet?.find(w => w.name === loginMethod);
+				if (foundWallet?.address) {
+					walletAddress = foundWallet.address;
+				} else {
+					// URL 파라미터에서 주소 가져옴 (fallback)
+					walletAddress = $page.url.searchParams.get('address') || '';
+				}
+			}
+			
+			// 로그인 방식에 따라 성공 메시지 설정
+			switch (loginMethod) {
+				case 'email':
+					successTitle = 'Email Verification Successful';
+					successDescription = 'You have successfully verified your email address.';
+					displayInfo = email;
+					break;
+				case 'google':
+					successTitle = 'Google Sign-In Successful';
+					successDescription = 'You have successfully signed in with your Google account.';
+					displayInfo = email;
+					break;
+				case 'ronin':
+					successTitle = 'Ronin Wallet Connected';
+					successDescription = 'Your Ronin Wallet has been successfully connected.';
+					displayInfo = maskAddress(walletAddress);
+					break;
+				case 'metamask':
+					successTitle = 'MetaMask Wallet Connected';
+					successDescription = 'Your MetaMask Wallet has been successfully connected.';
+					displayInfo = maskAddress(walletAddress);
+					break;
+				default:
+					// 기본값 사용
+					displayInfo = email;
+					break;
+			}
+			
+			// PGA 헬퍼 설정 (코드 참고)
+			if (window.pga && session.data) {
+				window.pga.helpers.setAuthToken(session.data);
+				pga.addMid({ encryptedMid: "fake-mid-1" });
+			}
+		} catch (error) {
+			console.error('Initialization error:', error);
+		} finally {
+			// 로딩 상태 해제
+			isLoading = false;
+		}
+	}
+
 	// 페이지가 마운트될 때 정보 설정
 	onMount(() => {
-		// 로그인 방식과 이메일 정보 가져오기
-		const loginMethod = $page.url.searchParams.get('login_method') || 'email';
-		email = $page.url.searchParams.get('email') || '';
-		
-		// 지갑 주소 마스킹 함수
-		const maskAddress = (address: string): string => {
-			if (!address || address.length < 10) return address;
-			return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-		};
-
-		// 로그인 방식에 따라 성공 메시지 설정
-		switch (loginMethod) {
-			case 'email':
-				successTitle = 'Email Verification Successful';
-				successDescription = 'You have successfully verified your email address.';
-				displayInfo = email;
-				break;
-			case 'google':
-				successTitle = 'Google Sign-In Successful';
-				successDescription = 'You have successfully signed in with your Google account.';
-				displayInfo = email;
-				break;
-			case 'ronin':
-				const roninAddress = $page.url.searchParams.get('address') || '';
-				successTitle = 'Ronin Wallet Connected';
-				successDescription = 'Your Ronin Wallet has been successfully connected.';
-				displayInfo = maskAddress(roninAddress);
-				break;
-			case 'metamask':
-				const metamaskAddress = $page.url.searchParams.get('address') || '';
-				successTitle = 'MetaMask Wallet Connected';
-				successDescription = 'Your MetaMask Wallet has been successfully connected.';
-				displayInfo = maskAddress(metamaskAddress);
-				break;
-			default:
-				// 기본값 사용
-				displayInfo = email;
-				break;
-		}
-		
-		// 모든 데이터가 준비되면 로딩 상태 해제
-		isLoading = false;
+		initialize();
 	});
 
 	function handleConfirm() {
-		// Logic to handle confirm action (e.g., close window or redirect)
-		window.location.href = '/';
+		goto('/account');
 	}
 </script>
 

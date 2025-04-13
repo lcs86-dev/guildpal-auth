@@ -4,8 +4,10 @@
 	import { goto } from '$app/navigation';
 	import { client, linkSocial, pga, signIn, signOut } from '$lib/auth-client';
 	import { walletLink } from '$lib/walletUtils';
+	import WalletSignInOverlay from '../../components/WalletSignInOverlay.svelte';
+	import ErrorNotification from '../../components/ErrorNotification.svelte';
 
-	// 연결 상태를 저장하는 변수
+	// Connection status variables
 	let linked = {
 		email: false,
 		social: {
@@ -26,8 +28,17 @@
 	let session: any = null;
 	let isLoading = true;
 	let userEmail = '';
+	
+	// Wallet connection state management
+	let isConnectingWallet = false;
+	let connectingWalletName = '';
+	
+	// Error state management
+	let showError = false;
+	let errorTitle = '';
+	let errorMessage = '';
 
-	// 사용자 정보 가져오기
+	// Fetch user information
 	async function fetchUser() {
 		try {
 			isLoading = true;
@@ -38,19 +49,19 @@
 				userEmail = s.data.user.email;
 			}
 
-			// 이메일 연결 여부 확인
+			// Check email connection status
 			const isEmailLinked = !!s?.data?.user && !!s?.data?.user?.emailVerified;
 			
-			// Google 연결 여부 확인
+			// Check Google connection status
 			const isGoogleLinked = !!(s?.data?.user && 
 				Array.isArray(s?.data?.account) && 
 				s?.data?.account?.find((a: any) => a.providerId === 'google'));
 			
-			// 지갑 연결 여부 확인
+			// Check wallet connection status
 			const roninWallet = s?.data?.wallet?.find((w: any) => w.name === 'ronin');
 			const metamaskWallet = s?.data?.wallet?.find((w: any) => w.name === 'metamask');
 
-			// 연결 상태 업데이트
+			// Update connection status
 			linked = {
 				email: isEmailLinked,
 				social: {
@@ -69,12 +80,13 @@
 			};
 		} catch (error) {
 			console.error('Failed to fetch user data:', error);
+			showErrorNotification('Loading Failed', 'Failed to fetch user information.');
 		} finally {
 			isLoading = false;
 		}
 	}
 
-	// 이메일 연결 페이지로 이동
+	// Navigate to email connection page
 	function handleConnect(service: string) {
 		if (service === 'email') {
 			goto('/email-connect');
@@ -87,49 +99,69 @@
 		}
 	}
 
-	// Google 계정 연결
+	// Connect Google account
 	async function connectGoogle() {
 		try {
 			await linkSocial({
 				provider: 'google',
 				callbackURL: '/sign-in-success'
 			});
-			// 소셜 로그인은 리디렉션이 발생하므로 여기로 돌아오지 않음
+			// Social login will redirect, so we won't return here
 		} catch (error) {
 			console.error('Failed to connect Google account:', error);
+			showErrorNotification('Connection Failed', 'Failed to connect Google account.');
 		}
 	}
 
-	// 지갑 연결
+	// Connect wallet
 	async function connectWallet(walletName: 'ronin' | 'metamask') {
 		try {
+			isConnectingWallet = true;
+			connectingWalletName = walletName;
+			
 			const result = await walletLink(walletName, signIn, client, pga);
 			
 			if (result.success) {
 				console.log(`Connected to ${walletName} wallet with address: ${result.address}`);
-				// 사용자 정보 다시 가져오기
+				// Refresh user information
 				await fetchUser();
 			} else {
-				alert(result.error || `Failed to connect ${walletName} wallet`);
+				showErrorNotification('Connection Failed', result.error || `Failed to connect ${walletName} wallet.`);
 			}
 		} catch (error: unknown) {
 			console.error('Failed to connect wallet:', error);
 			const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-			alert(`Error connecting to ${walletName} wallet: ${errorMessage}`);
+			showErrorNotification('Connection Failed', `Error connecting to ${walletName} wallet: ${errorMessage}`);
+		} finally {
+			isConnectingWallet = false;
+			connectingWalletName = '';
 		}
 	}
 
-	// 로그아웃
+	// Show error notification
+	function showErrorNotification(title: string, message: string) {
+		errorTitle = title;
+		errorMessage = message;
+		showError = true;
+	}
+	
+	// Close error notification
+	function closeErrorNotification() {
+		showError = false;
+	}
+
+	// Sign out
 	async function handleSignOut() {
 		try {
 			await signOut();
 			goto('/');
 		} catch (error) {
 			console.error('Failed to sign out:', error);
+			showErrorNotification('Sign Out Failed', 'An error occurred while signing out.');
 		}
 	}
 
-	// 페이지 로드 시 사용자 정보 가져오기
+	// Load user information on page load
 	onMount(() => {
 		fetchUser();
 	});
@@ -140,7 +172,7 @@
 	<div class="w-full mb-8">
 		<div class="flex items-center justify-between">
 			<div class="flex items-center">
-				<!-- GuildPal 로고 이미지 -->
+				<!-- GuildPal logo image -->
 				<img src="/images/guildpal_green.png" alt="GuildPal" class="h-7 mr-2" />
 				<span class="text-xl font-bold text-[#4CAF50]">GuildPal</span>
 				
@@ -255,8 +287,14 @@
 							<button
 								on:click={() => handleConnect('ronin')}
 								class="text-[#4CAF50] text-sm hover:opacity-80 transition flex items-center"
+								disabled={isConnectingWallet}
 							>
-								Connect <span class="ml-1">+</span>
+								{#if isConnectingWallet && connectingWalletName === 'ronin'}
+									<span class="inline-block w-4 h-4 border-2 border-[#4CAF50] border-t-transparent rounded-full animate-spin mr-2"></span>
+									Connecting...
+								{:else}
+									Connect <span class="ml-1">+</span>
+								{/if}
 							</button>
 						{:else}
 							<div class="text-[#A1A1AA] text-sm">Connected</div>
@@ -282,8 +320,14 @@
 							<button
 								on:click={() => handleConnect('metamask')}
 								class="text-[#4CAF50] text-sm hover:opacity-80 transition flex items-center"
+								disabled={isConnectingWallet}
 							>
-								Connect <span class="ml-1">+</span>
+								{#if isConnectingWallet && connectingWalletName === 'metamask'}
+									<span class="inline-block w-4 h-4 border-2 border-[#4CAF50] border-t-transparent rounded-full animate-spin mr-2"></span>
+									Connecting...
+								{:else}
+									Connect <span class="ml-1">+</span>
+								{/if}
 							</button>
 						{:else}
 							<div class="text-[#A1A1AA] text-sm">Connected</div>
@@ -293,5 +337,17 @@
 			</div>
 		</div>
 	{/if}
+
+	<!-- Wallet connection overlay (large spinner) -->
+	{#if isConnectingWallet}
+		<WalletSignInOverlay walletName={connectingWalletName} />
+	{/if}
 	
+	<!-- Error notification display -->
+	<ErrorNotification 
+		show={showError} 
+		title={errorTitle} 
+		message={errorMessage} 
+		onClose={closeErrorNotification} 
+	/>
 </div>

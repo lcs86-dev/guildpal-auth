@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   export let show = false;
   export let title = "Error";
   export let message = "";
@@ -10,7 +10,7 @@
   
   const dispatch = createEventDispatcher();
   
-  let timer;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   
   $: if (show && autoDismiss) {
     clearTimeout(timer);

@@ -182,7 +182,7 @@
 	});
 </script>
 
-<div class="w-full min-h-screen bg-black">
+<div class="w-full max-w-md mx-auto bg-black">
 	<!-- Header with logo - fixed height to prevent layout shift -->
 	<div class="w-full h-16 mb-8 flex items-center">
 		<div class="w-full flex items-center justify-between">

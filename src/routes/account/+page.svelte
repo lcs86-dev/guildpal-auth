@@ -171,10 +171,10 @@
 	});
 </script>
 
-<div class="w-full">
-	<!-- Header with logo -->
-	<div class="w-full mb-8">
-		<div class="flex items-center justify-between">
+<div class="w-full min-h-screen bg-black">
+	<!-- Header with logo - fixed height to prevent layout shift -->
+	<div class="w-full h-16 mb-8 flex items-center">
+		<div class="w-full flex items-center justify-between">
 			<div class="flex items-center">
 				<!-- GuildPal logo image -->
 				<img src="/images/guildpal_green.png" alt="GuildPal" class="h-7 mr-2" />
@@ -208,139 +208,202 @@
 		</div>
 	</div>
 
-	{#if isLoading}
-		<div class="flex items-center justify-center p-8">
-			<div class="animate-spin h-8 w-8 border-4 border-t-[#4CAF50] border-gray-600 rounded-full"></div>
-		</div>
-	{:else}
-		<div class="w-full flex flex-col gap-6">
-			<!-- Profile Settings Section -->
-			<div class="bg-[#1A1A1A] rounded-xl shadow p-6">
-				<h2 class="text-lg font-medium text-white mb-6">Profile Settings</h2>
+	<!-- Content area with consistent height -->
+	<div class="w-full">
+		{#if isLoading}
+			<!-- Skeleton loader with similar structure to loaded content -->
+			<div class="w-full flex flex-col gap-6">
+				<!-- Profile Settings Skeleton -->
+				<div class="bg-[#1A1A1A] rounded-xl shadow p-6">
+					<div class="h-7 w-40 bg-gray-800 rounded mb-6 animate-pulse"></div>
+					<div class="rounded-lg bg-[#262626] p-4">
+						<div class="flex justify-between items-center">
+							<div>
+								<div class="h-4 w-20 bg-gray-800 rounded mb-2 animate-pulse"></div>
+								<div class="h-5 w-32 bg-gray-800 rounded animate-pulse"></div>
+							</div>
+							<div class="h-6 w-20 bg-gray-800 rounded animate-pulse"></div>
+						</div>
+					</div>
+				</div>
 
-				<div class="rounded-lg bg-[#262626] p-4">
-					<div class="flex justify-between items-center">
-						<div>
-							<p class="text-sm text-[#A1A1AA]">Your E-mail</p>
-							{#if linked.email}
-								<p class="text-white">{userEmail}</p>
+				<!-- SNS & Wallet Connections Skeleton -->
+				<div class="bg-[#1A1A1A] rounded-xl shadow p-6">
+					<div class="h-7 w-56 bg-gray-800 rounded mb-6 animate-pulse"></div>
+					
+					<!-- Google Connection Skeleton -->
+					<div class="rounded-lg bg-[#262626] p-4 mb-4">
+						<div class="flex justify-between items-center">
+							<div class="flex items-center">
+								<div class="h-5 w-5 bg-gray-800 rounded-full mr-3 animate-pulse"></div>
+								<div>
+									<div class="h-5 w-24 bg-gray-800 rounded mb-1 animate-pulse"></div>
+									<div class="h-4 w-32 bg-gray-800 rounded animate-pulse"></div>
+								</div>
+							</div>
+							<div class="h-6 w-20 bg-gray-800 rounded animate-pulse"></div>
+						</div>
+					</div>
+
+					<!-- Ronin Wallet Connection Skeleton -->
+					<div class="rounded-lg bg-[#262626] p-4 mb-4">
+						<div class="flex justify-between items-center">
+							<div class="flex items-center">
+								<div class="h-5 w-5 bg-gray-800 rounded-full mr-3 animate-pulse"></div>
+								<div>
+									<div class="h-5 w-28 bg-gray-800 rounded mb-1 animate-pulse"></div>
+									<div class="h-4 w-32 bg-gray-800 rounded animate-pulse"></div>
+								</div>
+							</div>
+							<div class="h-6 w-20 bg-gray-800 rounded animate-pulse"></div>
+						</div>
+					</div>
+
+					<!-- Metamask Wallet Connection Skeleton -->
+					<div class="rounded-lg bg-[#262626] p-4">
+						<div class="flex justify-between items-center">
+							<div class="flex items-center">
+								<div class="h-5 w-5 bg-gray-800 rounded-full mr-3 animate-pulse"></div>
+								<div>
+									<div class="h-5 w-32 bg-gray-800 rounded mb-1 animate-pulse"></div>
+									<div class="h-4 w-32 bg-gray-800 rounded animate-pulse"></div>
+								</div>
+							</div>
+							<div class="h-6 w-20 bg-gray-800 rounded animate-pulse"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		{:else}
+			<div class="w-full flex flex-col gap-6">
+				<!-- Profile Settings Section -->
+				<div class="bg-[#1A1A1A] rounded-xl shadow p-6">
+					<h2 class="text-lg font-medium text-white mb-6">Profile Settings</h2>
+
+					<div class="rounded-lg bg-[#262626] p-4">
+						<div class="flex justify-between items-center">
+							<div>
+								<p class="text-sm text-[#A1A1AA]">Your E-mail</p>
+								{#if linked.email}
+									<p class="text-white">{userEmail}</p>
+								{:else}
+									<p class="text-white">-</p>
+								{/if}
+							</div>
+							{#if !linked.email}
+								<button
+									on:click={() => handleConnect('email')}
+									class="text-[#4CAF50] text-sm hover:opacity-80 transition flex items-center"
+								>
+									Connect <span class="ml-1">+</span>
+								</button>
 							{:else}
-								<p class="text-white">-</p>
+								<div class="text-[#A1A1AA] text-sm">Connected</div>
 							{/if}
 						</div>
-						{#if !linked.email}
-							<button
-								on:click={() => handleConnect('email')}
-								class="text-[#4CAF50] text-sm hover:opacity-80 transition flex items-center"
-							>
-								Connect <span class="ml-1">+</span>
-							</button>
-						{:else}
-							<div class="text-[#A1A1AA] text-sm">Connected</div>
-						{/if}
+					</div>
+				</div>
+
+				<!-- SNS & Wallet Connections Section -->
+				<div class="bg-[#1A1A1A] rounded-xl shadow p-6">
+					<h2 class="text-lg font-medium text-white mb-6">SNS & Wallet Connections</h2>
+
+					<!-- Google Connection -->
+					<div class="rounded-lg bg-[#262626] p-4 mb-4">
+						<div class="flex justify-between items-center">
+							<div class="flex items-center">
+								<img src="/images/google.png" alt="Google" class="h-5 w-5 mr-3" />
+								<div>
+									<p class="text-white">Google</p>
+									{#if linked.social.google}
+										<p class="text-[#4CAF50] text-sm">{userEmail}</p>
+									{:else}
+										<p class="text-[#A1A1AA] text-sm">-</p>
+									{/if}
+								</div>
+							</div>
+							{#if !linked.social.google}
+								<button
+									on:click={() => handleConnect('google')}
+									class="text-[#4CAF50] text-sm hover:opacity-80 transition flex items-center"
+								>
+									Connect <span class="ml-1">+</span>
+								</button>
+							{:else}
+								<div class="text-[#A1A1AA] text-sm">Connected</div>
+							{/if}
+						</div>
+					</div>
+
+					<!-- Ronin Wallet Connection -->
+					<div class="rounded-lg bg-[#262626] p-4 mb-4">
+						<div class="flex justify-between items-center">
+							<div class="flex items-center">
+								<img src="/images/ronin.png" alt="Ronin Wallet" class="h-5 w-5 mr-3" />
+								<div>
+									<p class="text-white">Ronin Wallet</p>
+									{#if linked.wallet.ronin.linked}
+										<p class="text-[#4CAF50] text-sm">{linked.wallet.ronin.address.slice(0, 8)}...</p>
+									{:else}
+										<p class="text-[#A1A1AA] text-sm">-</p>
+									{/if}
+								</div>
+							</div>
+							{#if !linked.wallet.ronin.linked}
+								<button
+									on:click={() => handleConnect('ronin')}
+									class="text-[#4CAF50] text-sm hover:opacity-80 transition flex items-center"
+									disabled={isConnectingWallet}
+								>
+									{#if isConnectingWallet && connectingWalletName === 'ronin'}
+										<span class="inline-block w-4 h-4 border-2 border-[#4CAF50] border-t-transparent rounded-full animate-spin mr-2"></span>
+										Connecting...
+									{:else}
+										Connect <span class="ml-1">+</span>
+									{/if}
+								</button>
+							{:else}
+								<div class="text-[#A1A1AA] text-sm">Connected</div>
+							{/if}
+						</div>
+					</div>
+
+					<!-- Metamask Wallet Connection -->
+					<div class="rounded-lg bg-[#262626] p-4">
+						<div class="flex justify-between items-center">
+							<div class="flex items-center">
+								<img src="/images/metamask.png" alt="Metamask" class="h-5 w-5 mr-3" />
+								<div>
+									<p class="text-white">Metamask Wallet</p>
+									{#if linked.wallet.metamask.linked}
+										<p class="text-[#4CAF50] text-sm">{linked.wallet.metamask.address.slice(0, 8)}...</p>
+									{:else}
+										<p class="text-[#A1A1AA] text-sm">-</p>
+									{/if}
+								</div>
+							</div>
+							{#if !linked.wallet.metamask.linked}
+								<button
+									on:click={() => handleConnect('metamask')}
+									class="text-[#4CAF50] text-sm hover:opacity-80 transition flex items-center"
+									disabled={isConnectingWallet}
+								>
+									{#if isConnectingWallet && connectingWalletName === 'metamask'}
+										<span class="inline-block w-4 h-4 border-2 border-[#4CAF50] border-t-transparent rounded-full animate-spin mr-2"></span>
+										Connecting...
+									{:else}
+										Connect <span class="ml-1">+</span>
+									{/if}
+								</button>
+							{:else}
+								<div class="text-[#A1A1AA] text-sm">Connected</div>
+							{/if}
+						</div>
 					</div>
 				</div>
 			</div>
-
-			<!-- SNS & Wallet Connections Section -->
-			<div class="bg-[#1A1A1A] rounded-xl shadow p-6">
-				<h2 class="text-lg font-medium text-white mb-6">SNS & Wallet Connections</h2>
-
-				<!-- Google Connection -->
-				<div class="rounded-lg bg-[#262626] p-4 mb-4">
-					<div class="flex justify-between items-center">
-						<div class="flex items-center">
-							<img src="/images/google.png" alt="Google" class="h-5 w-5 mr-3" />
-							<div>
-								<p class="text-white">Google</p>
-								{#if linked.social.google}
-									<p class="text-[#4CAF50] text-sm">{userEmail}</p>
-								{:else}
-									<p class="text-[#A1A1AA] text-sm">-</p>
-								{/if}
-							</div>
-						</div>
-						{#if !linked.social.google}
-							<button
-								on:click={() => handleConnect('google')}
-								class="text-[#4CAF50] text-sm hover:opacity-80 transition flex items-center"
-							>
-								Connect <span class="ml-1">+</span>
-							</button>
-						{:else}
-							<div class="text-[#A1A1AA] text-sm">Connected</div>
-						{/if}
-					</div>
-				</div>
-
-				<!-- Ronin Wallet Connection -->
-				<div class="rounded-lg bg-[#262626] p-4 mb-4">
-					<div class="flex justify-between items-center">
-						<div class="flex items-center">
-							<img src="/images/ronin.png" alt="Ronin Wallet" class="h-5 w-5 mr-3" />
-							<div>
-								<p class="text-white">Ronin Wallet</p>
-								{#if linked.wallet.ronin.linked}
-									<p class="text-[#4CAF50] text-sm">{linked.wallet.ronin.address.slice(0, 8)}...</p>
-								{:else}
-									<p class="text-[#A1A1AA] text-sm">-</p>
-								{/if}
-							</div>
-						</div>
-						{#if !linked.wallet.ronin.linked}
-							<button
-								on:click={() => handleConnect('ronin')}
-								class="text-[#4CAF50] text-sm hover:opacity-80 transition flex items-center"
-								disabled={isConnectingWallet}
-							>
-								{#if isConnectingWallet && connectingWalletName === 'ronin'}
-									<span class="inline-block w-4 h-4 border-2 border-[#4CAF50] border-t-transparent rounded-full animate-spin mr-2"></span>
-									Connecting...
-								{:else}
-									Connect <span class="ml-1">+</span>
-								{/if}
-							</button>
-						{:else}
-							<div class="text-[#A1A1AA] text-sm">Connected</div>
-						{/if}
-					</div>
-				</div>
-
-				<!-- Metamask Wallet Connection -->
-				<div class="rounded-lg bg-[#262626] p-4">
-					<div class="flex justify-between items-center">
-						<div class="flex items-center">
-							<img src="/images/metamask.png" alt="Metamask" class="h-5 w-5 mr-3" />
-							<div>
-								<p class="text-white">Metamask Wallet</p>
-								{#if linked.wallet.metamask.linked}
-									<p class="text-[#4CAF50] text-sm">{linked.wallet.metamask.address.slice(0, 8)}...</p>
-								{:else}
-									<p class="text-[#A1A1AA] text-sm">-</p>
-								{/if}
-							</div>
-						</div>
-						{#if !linked.wallet.metamask.linked}
-							<button
-								on:click={() => handleConnect('metamask')}
-								class="text-[#4CAF50] text-sm hover:opacity-80 transition flex items-center"
-								disabled={isConnectingWallet}
-							>
-								{#if isConnectingWallet && connectingWalletName === 'metamask'}
-									<span class="inline-block w-4 h-4 border-2 border-[#4CAF50] border-t-transparent rounded-full animate-spin mr-2"></span>
-									Connecting...
-								{:else}
-									Connect <span class="ml-1">+</span>
-								{/if}
-							</button>
-						{:else}
-							<div class="text-[#A1A1AA] text-sm">Connected</div>
-						{/if}
-					</div>
-				</div>
-			</div>
-		</div>
-	{/if}
+		{/if}
+	</div>
 
 	<!-- Connection overlay (large spinner) -->
 	{#if isConnectingWallet}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { client, pga, signIn, emailOtp } from '$lib/auth-client';
-	// import { onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import { walletSignIn } from '$lib/walletUtils';
 	import { 
 		SignInOverlay, 
@@ -9,7 +9,6 @@
 		EmailVerificationForm, 
 		WalletSignIn 
 	} from '../components';
-	// import { setupPGAAuth } from '$lib/pgaUtils';
 
 	// 이메일 관련 상태
 	let email = '';
@@ -31,9 +30,35 @@
 	let walletError = '';
 	let showWalletError = false;
 	let isSocialLoading = false;
+	let isCheckingAuth = true;
 
 	// 데모용 올바른 인증 코드
 	const correctCode = '123456';
+	
+	// PGA 인증 토큰과 MID 설정 함수
+	// async function setupPGAAuth(sessionData: any): Promise<void> {
+	// 	if (!window.pga) return;
+		
+	// 	try {
+	// 		window.pga.helpers.setAuthToken(sessionData);
+	// 		const mid = await window.pga.helpers.getEncryptedMid();
+	// 		await pga.addMid({ encryptedMid: mid });
+	// 		console.log('PGA authentication setup complete');
+	// 	} catch (error) {
+	// 		console.error('Failed to setup PGA authentication:', error);
+	// 	}
+	// }
+	
+	// 로그인 상태 확인
+	async function checkAuthStatus(): Promise<boolean> {
+		try {
+			const session = await client.getSession();
+			return !!session.data?.user;
+		} catch (error) {
+			console.error('Failed to check auth status:', error);
+			return false;
+		}
+	}
 
 	// 이메일 인증 처리
 	async function handleVerifyEmail(): Promise<void> {
@@ -116,7 +141,15 @@
 				return;
 			}
 			
-			// await setupPGAAuth()
+			// 세션 가져오기
+			// const session = await client.getSession();
+			// if (session.error) {
+			// 	codeError = 'Failed to get session. Please try again.';
+			// 	return;
+			// }
+			
+			// // PGA 인증 설정
+			// await setupPGAAuth(session.data);
 			
 			// 성공 페이지로 이동 (이메일 전달)
 			const url = new URL('/sign-in-success', window.location.origin);
@@ -150,7 +183,17 @@
 		
 		// 결과 처리
 		if (result.success) {
-			// await setupPGAAuth()
+			// 세션 가져오기
+			// const session = await client.getSession();
+			// if (session.error) {
+			// 	walletError = 'Failed to get session. Please try again.';
+			// 	showWalletError = true;
+			// 	isWalletLoading = false;
+			// 	return;
+			// }
+			
+			// // PGA 인증 설정
+			// await setupPGAAuth(result.sessionData);
 			
 			// 성공 페이지로 이동 (지갑 주소도 전달)
 			const url = new URL('/sign-in-success', window.location.origin);
@@ -218,11 +261,37 @@
 		// 로그인 로직 실행
 		handleSignIn();
 	}
+	
+	// 로그인 상태 확인 및 리디렉션
+	onMount(async () => {
+		isCheckingAuth = true;
+		
+		try {
+			// 로그인 상태 확인
+			const isLoggedIn = await checkAuthStatus();
+			
+			// 로그인 상태이면 account 페이지로 리디렉션
+			if (isLoggedIn) {
+				console.log('User is already logged in, redirecting to account page');
+				goto('/account', { replaceState: true });
+				return;
+			}
+		} catch (error) {
+			console.error('Error checking auth status:', error);
+		} finally {
+			isCheckingAuth = false;
+		}
+	});
 </script>
 
+{#if isCheckingAuth}
+<div class="fixed inset-0 bg-black flex items-center justify-center z-50">
+	<div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#4CAF50]"></div>
+</div>
+{:else}
 <div class="w-full max-w-md mx-auto relative">
 	{#if isWalletLoading || isSocialLoading}
-		<SignInOverlay walletName={isSocialLoading ? 'Google' : loadingWalletType} />
+		<SignInOverlay />
 	{/if}
 
 	<ErrorNotification 
@@ -299,6 +368,7 @@
 		on:wallet-signin={onWalletSignIn}
 	/>
 </div>
+{/if}
 
 <style>
 	@keyframes slideDown {

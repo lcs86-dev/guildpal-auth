@@ -4,7 +4,7 @@
 	import { BrowserProvider, ethers } from 'ethers';
 	import { SiweMessage } from 'siwe';
 	import { onMount } from 'svelte';
-	import WalletSignInOverlay from '../components/WalletSignInOverlay.svelte';
+	import { WalletSignInOverlay, ErrorNotification } from '../components';
 
 	let email = '';
 	let code = '';
@@ -19,6 +19,8 @@
 	let verificationFailed = false;
 	let isWalletLoading = false;
 	let loadingWalletType = '';
+	let walletError = '';
+	let showWalletError = false;
 
 	// 데모용 올바른 인증 코드
 	const correctCode = '123456';
@@ -114,75 +116,94 @@
 		}, 1000);
 	}
 
+	// 오류 닫기 핸들러
+	function handleCloseError() {
+		showWalletError = false;
+	}
+
 	const handleRoninSignIn = async () => {
+		// Reset previous errors
+		walletError = '';
+		showWalletError = false;
+		
 		isWalletLoading = true;
 		loadingWalletType = 'Ronin Wallet';
 		
 		try {
+			// Check if wallet is available
 			if (!window?.ronin?.provider) {
-				alert('no ronin provider found');
-				isWalletLoading = false;
+				walletError = 'Ronin Wallet not found. Please install the extension.';
+				showWalletError = true;
 				return;
 			}
 
-			const provider = new BrowserProvider(window?.ronin?.provider);
-			const addresses = await provider.send('eth_requestAccounts', []);
-
-			const scheme = window.location.protocol.slice(0, -1);
-			const domain = window.location.host;
-			const origin = window.location.origin;
-			const address = ethers.getAddress(addresses[0]);
-
-			const signer = await provider.getSigner();
-			const nonce = await signIn.nonce({ address });
-			if (nonce.error) {
-				alert('fetching nonce failed');
-				isWalletLoading = false;
-				return;
+			const provider = new BrowserProvider(window.ronin.provider);
+			
+			try {
+				// Request accounts
+				const addresses = await provider.send('eth_requestAccounts', []);
+				const address = ethers.getAddress(addresses[0]);
+				
+				// Get signer
+				const signer = await provider.getSigner();
+				
+				// Get nonce
+				const nonceResponse = await signIn.nonce({ address });
+				if (nonceResponse.error) {
+					walletError = 'Failed to get authentication nonce. Please try again.';
+					showWalletError = true;
+					return;
+				}
+				
+				// Prepare message parameters
+				const messageParams = {
+					scheme: window.location.protocol.slice(0, -1),
+					domain: window.location.host,
+					address,
+					statement: "Sign in with Ronin to the app.",
+					uri: window.location.origin,
+					version: '1',
+					nonce: nonceResponse.data?.nonce,
+					chainId: 1
+				};
+				
+				// Create and sign message
+				const message = new SiweMessage(messageParams);
+				const messageToSign = message.prepareMessage();
+				const signature = await signer.signMessage(messageToSign);
+				
+				// Verify signature
+				await signIn.verify({
+					message: messageToSign,
+					signature,
+					address,
+					walletName: 'ronin'
+				});
+				
+				// Get session and redirect
+				const session = await client.getSession();
+				if (!session.error && window.pga) {
+					window.pga.helpers.setAuthToken(session.data);
+					pga.addMid({ encryptedMid: 'fake-mid-1' });
+				}
+				
+				// Redirect to success page
+				goto('/sign-in-success?login_method=ronin', { replaceState: true });
+			} catch (reqError) {
+				console.error('Request error:', reqError);
+				
+				if (reqError.code === 4001) {
+					walletError = 'You declined the signature request. Please try again and approve the request.';
+				} else {
+					walletError = 'Failed to connect with Ronin Wallet. Please try again.';
+				}
+				showWalletError = true;
 			}
-
-			const statement = "Sign in with Ronin to the app.";
-			// const statement = 'By signing this message, you are authenticating with GuildPal.';
-			const message = new SiweMessage({
-				scheme,
-				domain,
-				address,
-				statement,
-				uri: origin,
-				version: '1',
-				nonce: nonce.data?.nonce,
-				chainId: 1
-			});
-			const messageToSign = message.prepareMessage();
-
-
-			const signature = await signer.signMessage(messageToSign);
-
-			const result = await signIn.verify({
-				message: messageToSign,
-				signature,
-				address,
-				walletName: 'ronin'
-			});
-
-			const session = await client.getSession();
-			if (session.error) {
-				isWalletLoading = false;
-				return;
-			}
-			if (window.pga) {
-				window.pga.helpers.setAuthToken(session.data);
-				pga.addMid({ encryptedMid: 'fake-mid-1' });
-			}
-
-			const url = new URL('/sign-in-success', window.location.origin);
-			url.searchParams.set('login_method', 'ronin');
-
-			goto(url.toString(), {
-				replaceState: true // default is false; true replaces current history entry
-			});
 		} catch (error) {
-			console.error(error);
+			console.error('Ronin sign-in error:', error);
+			walletError = 'An unexpected error occurred. Please try again.';
+			showWalletError = true;
+		} finally {
 			isWalletLoading = false;
 		}
 	};
@@ -218,6 +239,15 @@
 	{#if isWalletLoading}
 		<WalletSignInOverlay walletName={loadingWalletType} />
 	{/if}
+
+	<ErrorNotification 
+		show={showWalletError} 
+		title="Connection Error" 
+		message={walletError} 
+		onClose={handleCloseError}
+		autoDismiss={true}
+		dismissDuration={5000}
+	/>
 
 	<!-- Logo and Text -->
 	<div class="flex flex-col items-center mb-10">
@@ -457,3 +487,20 @@
 		</button>
 	</div>
 </div>
+
+<style>
+	@keyframes slideDown {
+		from {
+			transform: translateY(-20px);
+			opacity: 0;
+		}
+		to {
+			transform: translateY(0);
+			opacity: 1;
+		}
+	}
+	
+	.animate-slideDown {
+		animation: slideDown 0.3s ease-out forwards;
+	}
+</style>

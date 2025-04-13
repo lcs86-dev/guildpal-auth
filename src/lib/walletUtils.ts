@@ -36,7 +36,7 @@ export const walletConfigs: Record<string, WalletConfig> = {
   }
 };
 
-export interface WalletSignInResult {
+export interface WalletResult {
   success: boolean;
   error?: string;
   sessionData?: any;
@@ -49,7 +49,7 @@ export async function walletSignIn(
   signInClient: any,
   clientGetter: any,
   pgaHelper: any
-): Promise<WalletSignInResult> {
+): Promise<WalletResult> {
   // 지갑 설정 가져오기
   const walletConfig = walletConfigs[walletType];
   
@@ -151,6 +151,125 @@ export async function walletSignIn(
     }
   } catch (error: any) {
     console.error(`${walletConfig.name} sign-in error:`, error);
+    return {
+      success: false,
+      error: 'An unexpected error occurred. Please try again.'
+    };
+  }
+}
+
+// 지갑 연결 처리 함수
+export async function walletLink(
+  walletType: 'ronin' | 'metamask',
+  signInClient: any,
+  clientGetter: any,
+  pgaHelper: any
+): Promise<WalletResult> {
+  // 지갑 설정 가져오기
+  const walletConfig = walletConfigs[walletType];
+  
+  try {
+    // 지갑 사용 가능 여부 확인
+    if (!walletConfig.isWalletAvailable(window)) {
+      return {
+        success: false,
+        error: `${walletConfig.name} not found. Please install the extension.`
+      };
+    }
+
+    const provider = new BrowserProvider(walletConfig.getProvider(window));
+    
+    try {
+      // 계정 요청
+      const addresses = await provider.send('eth_requestAccounts', []);
+      const address = ethers.getAddress(addresses[0]);
+      
+      // 서명자 가져오기
+      const signer = await provider.getSigner();
+      
+      // 논스 가져오기
+      const nonceResponse = await signInClient.nonce({ address });
+      if (nonceResponse.error) {
+        return {
+          success: false,
+          error: 'Failed to get authentication nonce. Please try again.'
+        };
+      }
+      
+      // 메시지 파라미터 준비
+      const messageParams = {
+        scheme: window.location.protocol.slice(0, -1),
+        domain: window.location.host,
+        address,
+        statement: walletConfig.statement,
+        uri: window.location.origin,
+        version: '1',
+        nonce: nonceResponse.data?.nonce,
+        chainId: 1
+      };
+      
+      // 메시지 생성 및 서명
+      const message = new SiweMessage(messageParams);
+      const messageToSign = message.prepareMessage();
+      const signature = await signer.signMessage(messageToSign);
+      
+      // 지갑 연결 요청
+      const result = await signInClient.walletLink({
+        message: messageToSign,
+        signature,
+        address,
+        walletName: walletConfig.walletName
+      });
+      
+      if (result.error) {
+        return {
+          success: false,
+          error: `Failed to link ${walletConfig.name}. Please try again.`
+        };
+      }
+      
+      // MID 추가 (필요한 경우)
+      try {
+        await pgaHelper.addMid({ encryptedMid: 'fake-mid-1' });
+        console.log('add mid success');
+      } catch (midError) {
+        console.error('Failed to add MID:', midError);
+        // MID 추가 실패는 치명적인 오류로 간주하지 않음
+      }
+      
+      // 세션 가져오기
+      const session = await clientGetter.getSession();
+      
+      if (session.error) {
+        return {
+          success: false,
+          error: 'Session refresh failed after wallet linking. Please try again.'
+        };
+      }
+      
+      return {
+        success: true,
+        sessionData: session.data,
+        address
+      };
+      
+    } catch (error: any) {
+      console.error(`${walletConfig.name} link request error:`, error);
+      
+      if (error.code === 4001) {
+        return {
+          success: false,
+          error: 'You declined the signature request. Please try again and approve the request.'
+        };
+      } else {
+        return {
+          success: false,
+          error: `Failed to connect with ${walletConfig.name}. Please try again.`
+        };
+      }
+    }
+  } catch (error: any) {
+    console.error(`${walletConfig.name} link error:`, error);
     return {
       success: false,
       error: 'An unexpected error occurred. Please try again.'

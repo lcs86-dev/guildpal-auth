@@ -25,6 +25,36 @@
 	// 데모용 올바른 인증 코드
 	const correctCode = '123456';
 
+	// 지갑 유형 인터페이스
+	interface WalletConfig {
+		name: string;
+		providerKey: 'ronin' | 'ethereum';
+		isWalletAvailable: (window: Window) => boolean;
+		getProvider: (window: Window) => any;
+		statement: string;
+		walletName: string;
+	}
+
+	// 지갑 설정
+	const walletConfigs: Record<string, WalletConfig> = {
+		ronin: {
+			name: 'Ronin Wallet',
+			providerKey: 'ronin',
+			isWalletAvailable: (window) => !!window?.ronin?.provider,
+			getProvider: (window) => window.ronin.provider,
+			statement: 'Sign in with Ronin to the app.',
+			walletName: 'ronin'
+		},
+		metamask: {
+			name: 'MetaMask',
+			providerKey: 'ethereum',
+			isWalletAvailable: (window) => !!window?.ethereum && !!window?.ethereum?.isMetaMask,
+			getProvider: (window) => window.ethereum,
+			statement: 'Sign in with Ethereum to the app.',
+			walletName: 'metamask'
+		}
+	};
+
 	function validateEmail(email: string): boolean {
 		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		return re.test(email);
@@ -121,33 +151,38 @@
 		showWalletError = false;
 	}
 
-	const handleRoninSignIn = async (): Promise<void> => {
-		// Reset previous errors
+	// 공통 지갑 로그인 함수
+	const handleWalletSignIn = async (walletType: 'ronin' | 'metamask'): Promise<void> => {
+		// 지갑 설정 가져오기
+		const walletConfig = walletConfigs[walletType];
+		
+		// 오류 초기화
 		walletError = '';
 		showWalletError = false;
 		
+		// 로딩 상태 설정
 		isWalletLoading = true;
-		loadingWalletType = 'Ronin Wallet';
+		loadingWalletType = walletConfig.name;
 		
 		try {
-			// Check if wallet is available
-			if (!window?.ronin?.provider) {
-				walletError = 'Ronin Wallet not found. Please install the extension.';
+			// 지갑 사용 가능 여부 확인
+			if (!walletConfig.isWalletAvailable(window)) {
+				walletError = `${walletConfig.name} not found. Please install the extension.`;
 				showWalletError = true;
 				return;
 			}
 
-			const provider = new BrowserProvider(window.ronin.provider);
+			const provider = new BrowserProvider(walletConfig.getProvider(window));
 			
 			try {
-				// Request accounts
+				// 계정 요청
 				const addresses = await provider.send('eth_requestAccounts', []);
 				const address = ethers.getAddress(addresses[0]);
 				
-				// Get signer
+				// 서명자 가져오기
 				const signer = await provider.getSigner();
 				
-				// Get nonce
+				// 논스 가져오기
 				const nonceResponse = await signIn.nonce({ address });
 				if (nonceResponse.error) {
 					walletError = 'Failed to get authentication nonce. Please try again.';
@@ -155,91 +190,81 @@
 					return;
 				}
 				
-				// Prepare message parameters
+				// 메시지 파라미터 준비
 				const messageParams = {
 					scheme: window.location.protocol.slice(0, -1),
 					domain: window.location.host,
 					address,
-					statement: "Sign in with Ronin to the app.",
+					statement: walletConfig.statement,
 					uri: window.location.origin,
 					version: '1',
 					nonce: nonceResponse.data?.nonce,
 					chainId: 1
 				};
 				
-				// Create and sign message
+				// 메시지 생성 및 서명
 				const message = new SiweMessage(messageParams);
 				const messageToSign = message.prepareMessage();
 				const signature = await signer.signMessage(messageToSign);
 				
-				// Verify signature
-				await signIn.verify({
+				if (walletType === 'metamask') {
+					console.log('signature and messageToSign', { signature, messageToSign });
+				}
+				
+				// 서명 검증
+				const result = await signIn.verify({
 					message: messageToSign,
 					signature,
 					address,
-					walletName: 'ronin'
+					walletName: walletConfig.walletName
 				});
 				
-				// Get session and redirect
+				if (walletType === 'metamask') {
+					console.log('result', result);
+				}
+				
+				// 세션 가져오기 및 리다이렉트
 				const session = await client.getSession();
-				if (!session.error && window.pga) {
+				
+				if (walletType === 'metamask') {
+					console.log('sign-in session', session);
+				}
+				
+				if (session.error) {
+					walletError = 'Session creation failed. Please try again.';
+					showWalletError = true;
+					return;
+				}
+				
+				if (window.pga) {
 					window.pga.helpers.setAuthToken(session.data);
 					pga.addMid({ encryptedMid: 'fake-mid-1' });
 				}
 				
-				// Redirect to success page
-				goto('/sign-in-success?login_method=ronin', { replaceState: true });
+				// 성공 페이지로 이동
+				goto(`/sign-in-success?login_method=${walletType}`, { replaceState: true });
 			} catch (error: any) {
-				console.error('Request error:', error);
+				console.error(`${walletConfig.name} request error:`, error);
 				
 				if (error.code === 4001) {
 					walletError = 'You declined the signature request. Please try again and approve the request.';
 				} else {
-					walletError = 'Failed to connect with Ronin Wallet. Please try again.';
+					walletError = `Failed to connect with ${walletConfig.name}. Please try again.`;
 				}
 				showWalletError = true;
 			}
 		} catch (error: any) {
-			console.error('Ronin sign-in error:', error);
+			console.error(`${walletConfig.name} sign-in error:`, error);
 			walletError = 'An unexpected error occurred. Please try again.';
 			showWalletError = true;
 		} finally {
 			isWalletLoading = false;
 		}
 	};
-	
-	const handleMetamaskSignIn = async (): Promise<void> => {
-		// Reset previous errors
-		walletError = '';
-		showWalletError = false;
-		
-		isWalletLoading = true;
-		loadingWalletType = 'MetaMask';
-		
-		try {
-			if (!window?.ethereum) {
-				walletError = 'MetaMask not found. Please install the extension.';
-				showWalletError = true;
-				return;
-			}
-			
-			// MetaMask sign-in implementation
-			// (Similar to Ronin implementation)
-			
-			// For demo purposes, just simulate a delay
-			setTimeout(() => {
-				isWalletLoading = false;
-				// Implement actual MetaMask login logic here
-			}, 2000);
-			
-		} catch (error: any) {
-			console.error('MetaMask sign-in error:', error);
-			walletError = 'An unexpected error occurred. Please try again.';
-			showWalletError = true;
-		} finally {
-			isWalletLoading = false;
-		}
-	};
+
+	// 기존 함수를 리팩토링된 버전으로 대체
+	const handleRoninSignIn = (): Promise<void> => handleWalletSignIn('ronin');
+	const handleMetamaskSignIn = (): Promise<void> => handleWalletSignIn('metamask');
 </script>
 
 <div class="w-full max-w-md mx-auto relative">

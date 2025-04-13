@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import { walletSignIn } from '$lib/walletUtils';
 	import { 
-		WalletSignInOverlay, 
+		SignInOverlay, 
 		ErrorNotification, 
 		EmailVerificationForm, 
 		WalletSignIn 
@@ -234,7 +234,7 @@
 
 <div class="w-full max-w-md mx-auto relative">
 	{#if isWalletLoading || isSocialLoading}
-		<WalletSignInOverlay walletName={isSocialLoading ? 'Google' : loadingWalletType} />
+		<SignInOverlay walletName={isSocialLoading ? 'Google' : loadingWalletType} />
 	{/if}
 
 	<ErrorNotification 

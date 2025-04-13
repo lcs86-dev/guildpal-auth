@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { client, linkSocial, pga, signIn, signOut } from '$lib/auth-client';
 	import { walletLink } from '$lib/walletUtils';
-	import WalletSignInOverlay from '../../components/WalletSignInOverlay.svelte';
+	import SignInOverlay from '../../components/SignInOverlay.svelte';
 	import ErrorNotification from '../../components/ErrorNotification.svelte';
 
 	// Connection status variables
@@ -29,7 +29,7 @@
 	let isLoading = true;
 	let userEmail = '';
 	
-	// Wallet connection state management
+	// Connection state management
 	let isConnectingWallet = false;
 	let connectingWalletName = '';
 	
@@ -102,6 +102,8 @@
 	// Connect Google account
 	async function connectGoogle() {
 		try {
+			isConnectingWallet = true; // Reusing the same state management for all connection types
+			
 			await linkSocial({
 				provider: 'google',
 				callbackURL: '/sign-in-success'
@@ -110,6 +112,8 @@
 		} catch (error) {
 			console.error('Failed to connect Google account:', error);
 			showErrorNotification('Connection Failed', 'Failed to connect Google account.');
+		} finally {
+			isConnectingWallet = false;
 		}
 	}
 
@@ -338,9 +342,9 @@
 		</div>
 	{/if}
 
-	<!-- Wallet connection overlay (large spinner) -->
+	<!-- Connection overlay (large spinner) -->
 	{#if isConnectingWallet}
-		<WalletSignInOverlay walletName={connectingWalletName} />
+		<SignInOverlay />
 	{/if}
 	
 	<!-- Error notification display -->

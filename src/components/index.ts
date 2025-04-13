@@ -1,11 +1,11 @@
 import ErrorNotification from './ErrorNotification.svelte';
-import WalletSignInOverlay from './WalletSignInOverlay.svelte';
+import SignInOverlay from './SignInOverlay.svelte';
 import EmailVerificationForm from './EmailVerificationForm.svelte';
 import WalletSignIn from './WalletSignIn.svelte';
 
 export { 
   ErrorNotification, 
-  WalletSignInOverlay, 
+  SignInOverlay, 
   EmailVerificationForm, 
   WalletSignIn 
 }; 

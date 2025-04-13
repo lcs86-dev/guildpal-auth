@@ -1,12 +1,5 @@
 <script lang="ts">
-  export let walletName = '';  // Default empty string if not provided
-  
-  // Display text based on wallet name
-  $: walletDisplayName = walletName === 'ronin' 
-    ? 'Ronin Wallet' 
-    : walletName === 'metamask' 
-      ? 'MetaMask' 
-      : walletName;
+  // No longer needs wallet-specific code
 </script>
 
 <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">

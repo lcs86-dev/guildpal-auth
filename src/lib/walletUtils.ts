@@ -114,23 +114,23 @@ export async function walletSignIn(
         console.log('result', result);
       }
       
-      // 세션 가져오기 및 리다이렉트
-      const session = await clientGetter.getSession();
+      // // 세션 가져오기 및 리다이렉트
+      // const session = await clientGetter.getSession();
       
-      if (walletType === 'metamask') {
-        console.log('sign-in session', session);
-      }
+      // if (walletType === 'metamask') {
+      //   console.log('sign-in session', session);
+      // }
       
-      if (session.error) {
-        return {
-          success: false,
-          error: 'Session creation failed. Please try again.'
-        };
-      }
+      // if (session.error) {
+      //   return {
+      //     success: false,
+      //     error: 'Session creation failed. Please try again.'
+      //   };
+      // }
       
       return {
         success: true,
-        sessionData: session.data,
+        // sessionData: session.data,
         address
       };
       

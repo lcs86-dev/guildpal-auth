@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { client, pga, signIn, emailOtp } from '$lib/auth-client';
-	import { onMount } from 'svelte';
+	// import { onMount } from 'svelte';
 	import { walletSignIn } from '$lib/walletUtils';
 	import { 
 		SignInOverlay, 
@@ -9,6 +9,7 @@
 		EmailVerificationForm, 
 		WalletSignIn 
 	} from '../components';
+	// import { setupPGAAuth } from '$lib/pgaUtils';
 
 	// 이메일 관련 상태
 	let email = '';
@@ -115,17 +116,7 @@
 				return;
 			}
 			
-			// 세션 가져오기
-			const session = await client.getSession();
-			if (session.error) {
-				codeError = 'Failed to get session. Please try again.';
-				return;
-			}
-			
-			if (window.pga) {
-				window.pga.helpers.setAuthToken(session.data);
-				pga.addMid({ encryptedMid: 'fake-mid-1' });
-			}
+			// await setupPGAAuth()
 			
 			// 성공 페이지로 이동 (이메일 전달)
 			const url = new URL('/sign-in-success', window.location.origin);
@@ -159,10 +150,7 @@
 		
 		// 결과 처리
 		if (result.success) {
-			if (window.pga) {
-				window.pga.helpers.setAuthToken(result.sessionData);
-				pga.addMid({ encryptedMid: 'fake-mid-1' });
-			}
+			// await setupPGAAuth()
 			
 			// 성공 페이지로 이동 (지갑 주소도 전달)
 			const url = new URL('/sign-in-success', window.location.origin);

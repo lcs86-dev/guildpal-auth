@@ -6,6 +6,7 @@
 	import { EmailVerificationForm } from '../../components';
 	import ErrorNotification from '../../components/ErrorNotification.svelte';
 	import SignInOverlay from '../../components/SignInOverlay.svelte';
+	import { setupPGAAuth } from '$lib/pgaUtils';
 
 	// Email verification states
 	let email = '';
@@ -118,17 +119,8 @@
 				return;
 			}
 
-			// 세션 가져오기
-			const session = await client.getSession();
-			if (session.error) {
-				codeError = 'Failed to retrieve your session. Please try again.';
-				return;
-			}
-
-			if (window.pga) {
-				window.pga.helpers.setAuthToken(session.data);
-				pga.addMid({ encryptedMid: 'fake-mid-1' });
-			}
+			
+			await setupPGAAuth()
 
 			// Success - redirect to account page
 			console.log('Successfully connected with:', { email, code });

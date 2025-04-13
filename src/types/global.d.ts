@@ -5,7 +5,8 @@ interface Window {
   ethereum?: any;
   pga?: {
     helpers: {
-      setAuthToken: (data: any) => void;
+      setAuthToken: (data: any) => Promise<void>;
+      getEncryptedMid: () => Promise<string>;
     };
     [key: string]: any;
   };

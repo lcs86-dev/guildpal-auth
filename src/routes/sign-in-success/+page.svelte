@@ -5,6 +5,7 @@
 	import { fade } from 'svelte/transition';
 	import { goto } from '$app/navigation';
 	import { client, pga } from '$lib/auth-client';
+	import { setupPGAAuth } from '$lib/pgaUtils';
 
 	let email = '';
 	let successTitle = 'You have successfully logged in.';
@@ -24,6 +25,7 @@
 				console.error('Session error:', session.error);
 				return;
 			}
+		  setupPGAAuth(session.data)
 			
 			// 사용자 이메일 설정 (세션에서 가져옴)
 			if (session.data?.user?.email) {
@@ -79,12 +81,7 @@
 					displayInfo = email;
 					break;
 			}
-			
-			// PGA 헬퍼 설정 (코드 참고)
-			if (window.pga && session.data) {
-				window.pga.helpers.setAuthToken(session.data);
-				pga.addMid({ encryptedMid: "fake-mid-1" });
-			}
+
 		} catch (error) {
 			console.error('Initialization error:', error);
 		} finally {

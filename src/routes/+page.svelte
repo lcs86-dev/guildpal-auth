@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { goto } from '$app/navigation';
 	import { client, pga, signIn } from '$lib/auth-client';
 	import { BrowserProvider, ethers } from 'ethers';
@@ -25,12 +25,12 @@
 	// 데모용 올바른 인증 코드
 	const correctCode = '123456';
 
-	function validateEmail(email) {
+	function validateEmail(email: string): boolean {
 		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		return re.test(email);
 	}
 
-	function handleVerifyEmail() {
+	function handleVerifyEmail(): void {
 		// Reset states
 		emailError = '';
 		verificationFailed = false;
@@ -75,7 +75,7 @@
 		}, 1500);
 	}
 
-	function handleSignIn() {
+	function handleSignIn(): void {
 		// Reset errors
 		codeError = '';
 
@@ -117,11 +117,11 @@
 	}
 
 	// 오류 닫기 핸들러
-	function handleCloseError() {
+	function handleCloseError(): void {
 		showWalletError = false;
 	}
 
-	const handleRoninSignIn = async () => {
+	const handleRoninSignIn = async (): Promise<void> => {
 		// Reset previous errors
 		walletError = '';
 		showWalletError = false;
@@ -189,17 +189,17 @@
 				
 				// Redirect to success page
 				goto('/sign-in-success?login_method=ronin', { replaceState: true });
-			} catch (reqError) {
-				console.error('Request error:', reqError);
+			} catch (error: any) {
+				console.error('Request error:', error);
 				
-				if (reqError.code === 4001) {
+				if (error.code === 4001) {
 					walletError = 'You declined the signature request. Please try again and approve the request.';
 				} else {
 					walletError = 'Failed to connect with Ronin Wallet. Please try again.';
 				}
 				showWalletError = true;
 			}
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Ronin sign-in error:', error);
 			walletError = 'An unexpected error occurred. Please try again.';
 			showWalletError = true;
@@ -208,14 +208,18 @@
 		}
 	};
 	
-	const handleMetamaskSignIn = async () => {
+	const handleMetamaskSignIn = async (): Promise<void> => {
+		// Reset previous errors
+		walletError = '';
+		showWalletError = false;
+		
 		isWalletLoading = true;
 		loadingWalletType = 'MetaMask';
 		
 		try {
 			if (!window?.ethereum) {
-				alert('MetaMask not found');
-				isWalletLoading = false;
+				walletError = 'MetaMask not found. Please install the extension.';
+				showWalletError = true;
 				return;
 			}
 			
@@ -228,8 +232,11 @@
 				// Implement actual MetaMask login logic here
 			}, 2000);
 			
-		} catch (error) {
-			console.error(error);
+		} catch (error: any) {
+			console.error('MetaMask sign-in error:', error);
+			walletError = 'An unexpected error occurred. Please try again.';
+			showWalletError = true;
+		} finally {
 			isWalletLoading = false;
 		}
 	};

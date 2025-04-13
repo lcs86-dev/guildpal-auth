@@ -1,4 +1,8 @@
 <script>
+	import { goto } from '$app/navigation';
+	import { client, pga, signIn } from '$lib/auth-client';
+	import { BrowserProvider, ethers } from 'ethers';
+	import { SiweMessage } from 'siwe';
 	import { onMount } from 'svelte';
 
 	let email = '';
@@ -12,7 +16,7 @@
 	let isSigningIn = false;
 	let showSuccessMessage = false;
 	let verificationFailed = false;
-	
+
 	// 데모용 올바른 인증 코드
 	const correctCode = '123456';
 
@@ -26,34 +30,34 @@
 		emailError = '';
 		verificationFailed = false;
 		isEmailVerified = false;
-		
+
 		// Validate email
 		if (!email) {
 			emailError = 'Please enter your email.';
 			return;
 		}
-		
+
 		if (!validateEmail(email)) {
 			emailError = 'Please enter a valid email address.';
 			return;
 		}
-		
+
 		// Simulate email verification
 		isVerifying = true;
-		
+
 		// Simulate API call delay
 		setTimeout(() => {
 			console.log('Verifying email:', email);
 			isVerifying = false;
-			
+
 			// Simulate success or failure (90% success rate for demo)
 			const isSuccess = Math.random() < 0.9;
-			
+
 			if (isSuccess) {
 				// Success case
 				isEmailVerified = true;
 				showSuccessMessage = true;
-				
+
 				// Hide success message after 3 seconds
 				setTimeout(() => {
 					showSuccessMessage = false;
@@ -69,27 +73,27 @@
 	function handleSignIn() {
 		// Reset errors
 		codeError = '';
-		
+
 		// Validate verification first
 		if (!isEmailVerified) {
 			emailError = 'Please verify your email first.';
 			return;
 		}
-		
+
 		// Validate code
 		if (!code) {
 			codeError = 'Please enter verification code.';
 			return;
 		}
-		
+
 		if (code.length < 6) {
 			codeError = 'Verification code must be at least 6 characters.';
 			return;
 		}
-		
+
 		// Start signing in process
 		isSigningIn = true;
-		
+
 		// Simulate API call delay
 		setTimeout(() => {
 			// Check if code is correct (demo purpose)
@@ -98,14 +102,81 @@
 				codeError = 'Invalid verification code. Please try again.';
 				return;
 			}
-			
+
 			// Success - redirect or handle successful sign-in
 			console.log('Successfully signed in with:', { email, code, rememberMe, autoLogin });
-			
+
 			// Navigate to account page or wherever needed
 			window.location.href = '/account';
 		}, 1000);
 	}
+
+	const handleRoninSignIn = async () => {
+		// setIsLoading(true);
+		try {
+			if (!window?.ronin?.provider) {
+				alert('no ronin provider found');
+				return;
+			}
+
+			const provider = new BrowserProvider(window?.ronin?.provider);
+			const addresses = await provider.send('eth_requestAccounts', []);
+
+			const scheme = window.location.protocol.slice(0, -1);
+			const domain = window.location.host;
+			const origin = window.location.origin;
+			const address = ethers.getAddress(addresses[0]);
+
+			const signer = await provider.getSigner();
+			const nonce = await signIn.nonce({ address });
+			if (nonce.error) {
+				alert('fetching nonce failed');
+				return;
+			}
+
+			const statement = "Sign in with Ronin to the app.";
+			// const statement = 'By signing this message, you are authenticating with GuildPal.';
+			const message = new SiweMessage({
+				scheme,
+				domain,
+				address,
+				statement,
+				uri: origin,
+				version: '1',
+				nonce: nonce.data?.nonce,
+				chainId: 1
+			});
+			const messageToSign = message.prepareMessage();
+
+
+			const signature = await signer.signMessage(messageToSign);
+
+			const result = await signIn.verify({
+				message: messageToSign,
+				signature,
+				address,
+				walletName: 'ronin'
+			});
+
+			const session = await client.getSession();
+			if (session.error) return;
+			if (window.pga) {
+				window.pga.helpers.setAuthToken(session.data);
+				pga.addMid({ encryptedMid: 'fake-mid-1' });
+			}
+
+			const url = new URL('/sign-in-success', window.location.origin);
+			url.searchParams.set('login_method', 'ronin');
+
+			goto(url.toString(), {
+				replaceState: true // default is false; true replaces current history entry
+			});
+		} catch (error) {
+			console.error(error);
+		} finally {
+			// setIsLoading(false);
+		}
+	};
 </script>
 
 <div class="w-full max-w-md mx-auto">
@@ -113,12 +184,14 @@
 	<div class="flex flex-col items-center mb-10">
 		<!-- GuildPal logo image -->
 		<img src="/images/guildpal.png" alt="GuildPal logo" class="h-16 mb-5" />
-		
+
 		<!-- GuildPal text logo -->
 		<h1 class="text-3xl font-bold text-white mb-3">GuildPal</h1>
-		
+
 		<!-- Sign in text -->
-		<p class="text-center text-[#A1A1AA] text-base">Please enter your details to sign in your account.</p>
+		<p class="text-center text-[#A1A1AA] text-base">
+			Please enter your details to sign in your account.
+		</p>
 	</div>
 
 	<!-- Form -->
@@ -132,9 +205,13 @@
 					bind:value={email}
 					placeholder="Please enter your email."
 					class={`w-full p-3.5 pl-4 rounded-xl bg-[#1A1A1A] border 
-						${emailError ? 'border-red-500 focus:ring-red-500' : 
-							isEmailVerified ? 'border-[#4CAF50] focus:ring-[#4CAF50]' : 
-							'border-[#333333] focus:ring-[#4CAF50]'} 
+						${
+							emailError
+								? 'border-red-500 focus:ring-red-500'
+								: isEmailVerified
+									? 'border-[#4CAF50] focus:ring-[#4CAF50]'
+									: 'border-[#333333] focus:ring-[#4CAF50]'
+						} 
 						text-white focus:outline-none focus:ring-2 pr-32 text-base`}
 					disabled={isVerifying || isEmailVerified}
 				/>
@@ -143,25 +220,54 @@
 					on:click={handleVerifyEmail}
 					disabled={isVerifying || isEmailVerified}
 					class={`absolute right-2.5 top-2 bottom-2 px-4 rounded-lg transition flex items-center justify-center min-w-[105px]
-						${isVerifying ? 'bg-[#1A1A1A] text-[#4CAF50] cursor-not-allowed' : 
-							isEmailVerified ? 'bg-[#262626] text-[#4CAF50] cursor-not-allowed' :
-							verificationFailed ? 'bg-[#262626] text-red-400 hover:bg-[#333333]' :
-							'bg-[#262626] text-white hover:bg-[#333333]'}`}
+						${
+							isVerifying
+								? 'bg-[#1A1A1A] text-[#4CAF50] cursor-not-allowed'
+								: isEmailVerified
+									? 'bg-[#262626] text-[#4CAF50] cursor-not-allowed'
+									: verificationFailed
+										? 'bg-[#262626] text-red-400 hover:bg-[#333333]'
+										: 'bg-[#262626] text-white hover:bg-[#333333]'
+						}`}
 				>
 					{#if isVerifying}
-						<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-[#4CAF50]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+						<svg
+							class="animate-spin -ml-1 mr-2 h-4 w-4 text-[#4CAF50]"
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+						>
+							<circle
+								class="opacity-25"
+								cx="12"
+								cy="12"
+								r="10"
+								stroke="currentColor"
+								stroke-width="4"
+							></circle>
+							<path
+								class="opacity-75"
+								fill="currentColor"
+								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+							></path>
 						</svg>
 						Sending...
 					{:else if isEmailVerified}
 						<svg class="h-4 w-4 text-[#4CAF50] mr-1" viewBox="0 0 20 20" fill="currentColor">
-							<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+							<path
+								fill-rule="evenodd"
+								d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+								clip-rule="evenodd"
+							/>
 						</svg>
 						Sent
 					{:else if verificationFailed}
 						<svg class="h-4 w-4 text-red-400 mr-1" viewBox="0 0 20 20" fill="currentColor">
-							<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+							<path
+								fill-rule="evenodd"
+								d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+								clip-rule="evenodd"
+							/>
 						</svg>
 						Try Again
 					{:else}
@@ -169,20 +275,28 @@
 					{/if}
 				</button>
 			</div>
-			
+
 			{#if emailError}
 				<p class="text-red-500 text-sm pl-1 flex items-center">
 					<svg class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-						<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+						<path
+							fill-rule="evenodd"
+							d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+							clip-rule="evenodd"
+						/>
 					</svg>
 					{emailError}
 				</p>
 			{/if}
-			
+
 			{#if showSuccessMessage}
 				<p class="text-[#4CAF50] text-sm pl-1 flex items-center">
 					<svg class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-						<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+						<path
+							fill-rule="evenodd"
+							d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+							clip-rule="evenodd"
+						/>
 					</svg>
 					Verification code sent to your email.
 				</p>
@@ -201,11 +315,15 @@
 					text-white focus:outline-none focus:ring-2 text-base`}
 				disabled={!isEmailVerified || isSigningIn}
 			/>
-			
+
 			{#if codeError}
 				<p class="text-red-500 text-sm pl-1 flex items-center">
 					<svg class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-						<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+						<path
+							fill-rule="evenodd"
+							d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+							clip-rule="evenodd"
+						/>
 					</svg>
 					{codeError}
 				</p>
@@ -238,15 +356,29 @@
 			type="submit"
 			disabled={!isEmailVerified || isSigningIn}
 			class={`w-full py-3.5 rounded-xl text-white font-medium transition mt-2 text-base
-				${!isEmailVerified ? 'bg-[#4CAF50]/50 cursor-not-allowed' : 
-					isSigningIn ? 'bg-[#4CAF50]/70 cursor-wait' : 
-					'bg-[#4CAF50] hover:opacity-90'}`}
+				${
+					!isEmailVerified
+						? 'bg-[#4CAF50]/50 cursor-not-allowed'
+						: isSigningIn
+							? 'bg-[#4CAF50]/70 cursor-wait'
+							: 'bg-[#4CAF50] hover:opacity-90'
+				}`}
 		>
 			{#if isSigningIn}
 				<span class="flex items-center justify-center">
-					<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+					<svg
+						class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+					>
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+						></circle>
+						<path
+							class="opacity-75"
+							fill="currentColor"
+							d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+						></path>
 					</svg>
 					Signing in...
 				</span>
@@ -274,16 +406,17 @@
 		</button>
 
 		<!-- Facebook login -->
-		<button
+		<!-- <button
 			class="w-full py-3.5 px-5 rounded-xl border border-[#333333] bg-[#1A1A1A] text-white font-medium flex items-center justify-between hover:bg-[#262626] transition text-base"
 		>
 			<img src="/images/facebook.png" alt="Facebook" class="w-5 h-5" />
 			<span class="flex-grow text-center">Sign in with Facebook</span>
-		</button>
+		</button> -->
 
 		<!-- Ronin Wallet login -->
 		<button
 			class="w-full py-3.5 px-5 rounded-xl border border-[#333333] bg-[#1A1A1A] text-white font-medium flex items-center justify-between hover:bg-[#262626] transition text-base"
+			on:click={handleRoninSignIn}
 		>
 			<img src="/images/ronin.png" alt="Ronin Wallet" class="w-5 h-5" />
 			<span class="flex-grow text-center">Sign in with Ronin Wallet</span>

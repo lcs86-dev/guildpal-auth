@@ -58,7 +58,8 @@ export const oAuthLink = (options?: any) => {
 						await parseState(c);
 
 					function redirectOnError(error: string) {
-						let url = errorURL || callbackURL || defaultErrorURL;
+						// let url = errorURL || callbackURL || defaultErrorURL;
+						let url = "/auth-error"
 						if (url.includes('?')) {
 							url = `${url}&error=${error}`;
 						} else {
@@ -84,7 +85,7 @@ export const oAuthLink = (options?: any) => {
 							code: code,
 							codeVerifier,
 							deviceId: device_id,
-							redirectURI: `${c.context.baseURL}/callback/${provider.id}`
+							redirectURI: `${c.context.baseURL}/callback/${provider.id}/link`
 						});
 					} catch (e) {
 						c.context.logger.error('', e);

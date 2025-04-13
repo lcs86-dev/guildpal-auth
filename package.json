@@ -40,7 +40,7 @@
 		"vite-plugin-node-polyfills": "^0.23.0"
 	},
 	"dependencies": {
-		"@atomrigslab/better-auth": "1.2.6-beta.4",
+		"@atomrigslab/better-auth": "1.2.6-beta.5",
 		"ethers": "^6.13.5",
 		"pg": "^8.14.1",
 		"resend": "^4.2.0",

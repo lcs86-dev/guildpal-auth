@@ -15,10 +15,10 @@
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.24"
 
-"@atomrigslab/better-auth@1.2.6-beta.4":
-  version "1.2.6-beta.4"
-  resolved "https://registry.yarnpkg.com/@atomrigslab/better-auth/-/better-auth-1.2.6-beta.4.tgz#025cad9ad9c9c4dc2712438f567bce62b8a6bdb2"
-  integrity sha512-Nnmvhv5KQRpCxn8XWk29P0JQMsWmcHqy5L3yWp/FirLUEwFRTIYdvXHxBWwuyEmDD+iKs9i4k9/wcJ97QcV0vw==
+"@atomrigslab/better-auth@1.2.6-beta.5":
+  version "1.2.6-beta.5"
+  resolved "https://registry.yarnpkg.com/@atomrigslab/better-auth/-/better-auth-1.2.6-beta.5.tgz#d44165a9d8cd47686ce47daad04c0c366c7ec479"
+  integrity sha512-zhGC5Ar/ad8702oQuHi2fYzGRqfDTBblfZEJVGojKYx/WdOW+sz9NbPpkg40O+1NFTO8XeQKHlqPL+DG4WHqHg==
   dependencies:
     "@better-auth/utils" "0.2.4"
     "@better-fetch/fetch" "catalog:"

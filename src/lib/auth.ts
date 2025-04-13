@@ -4,7 +4,7 @@ import { betterAuth } from '@atomrigslab/better-auth';
 import { bearer, customSession, emailOTP, jwt, openAPI } from '@atomrigslab/better-auth/plugins';
 import { GOOGLE_CLIENT_SECRET, RESEND_API_KEY, BETTER_AUTH_SECRET } from '$env/static/private';
 import { PUBLIC_GOOGLE_CLIENT_ID } from '$env/static/public';
-import { pga, mobile, siwe } from './plugins';
+import { pga, mobile, siwe, oAuthLink } from './plugins';
 
 const { Pool } = pkg;
 export const db = new Pool({
@@ -12,7 +12,7 @@ export const db = new Pool({
 });
 
 export const auth = betterAuth({
-	appName: 'Better Auth Demo',
+	appName: 'Guildpal',
 	secret: BETTER_AUTH_SECRET,
 	session: {
 		cookieCache: {
@@ -35,14 +35,14 @@ export const auth = betterAuth({
 	socialProviders: {
 		google: {
 			clientId: PUBLIC_GOOGLE_CLIENT_ID || '',
-			clientSecret: GOOGLE_CLIENT_SECRET || ''
+			clientSecret: GOOGLE_CLIENT_SECRET || '',
 		}
 	},
 	onAPIError: {
 		onError: (e) => {
 			console.log('auth.ts onAPIError onError');
 			console.error(e);
-		}
+		},
 	},
 	plugins: [
 		siwe({ domain: 'https://guildpal.com' }),
@@ -62,6 +62,7 @@ export const auth = betterAuth({
 		openAPI(),
 		jwt(),
 		mobile(),
+		oAuthLink(),
 		customSession(async ({ user, session }) => {
 			const mids = (await db.query('SELECT * FROM pga WHERE "userId" = $1', [user.id])).rows;
 			const wallets = (await db.query('SELECT * FROM wallet WHERE "userId" = $1', [user.id])).rows;

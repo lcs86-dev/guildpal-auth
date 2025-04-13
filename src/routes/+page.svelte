@@ -127,9 +127,10 @@
 				pga.addMid({ encryptedMid: 'fake-mid-1' });
 			}
 			
-			// 성공 페이지로 이동
+			// 성공 페이지로 이동 (이메일 전달)
 			const url = new URL('/sign-in-success', window.location.origin);
 			url.searchParams.set('login_method', 'email');
+			url.searchParams.set('email', email);
 			
 			goto(url.toString(), { replaceState: true });
 		} catch (error) {
@@ -163,8 +164,14 @@
 				pga.addMid({ encryptedMid: 'fake-mid-1' });
 			}
 			
-			// 성공 페이지로 이동
-			goto(`/sign-in-success?login_method=${walletType}`, { replaceState: true });
+			// 성공 페이지로 이동 (지갑 주소도 전달)
+			const url = new URL('/sign-in-success', window.location.origin);
+			url.searchParams.set('login_method', walletType);
+			if (result.address) {
+				url.searchParams.set('address', result.address);
+			}
+			
+			goto(url.toString(), { replaceState: true });
 		} else {
 			walletError = result.error || 'Unknown error occurred';
 			showWalletError = true;
@@ -178,9 +185,14 @@
 		try {
 			isSocialLoading = true;
 			
+			// Social 로그인은 기본적으로 리디렉션이 발생하므로
+			// 여기서 URL 구성 (email 파라미터는 소셜 로그인 후에 추가됨)
+			const callbackUrl = new URL('/sign-in-success', window.location.origin);
+			callbackUrl.searchParams.set('login_method', 'google');
+			
 			const signInResult = await signIn.social({
 				provider: "google",
-				callbackURL: window.location.origin + "/sign-in-success?login_method=google",
+				callbackURL: callbackUrl.toString(),
 			});
 			
 			// 소셜 로그인은 리디렉션을 사용하므로 여기에는 도달하지 않음

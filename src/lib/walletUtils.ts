@@ -40,6 +40,7 @@ export interface WalletSignInResult {
   success: boolean;
   error?: string;
   sessionData?: any;
+  address?: string;
 }
 
 // 지갑 로그인 처리 함수
@@ -129,7 +130,8 @@ export async function walletSignIn(
       
       return {
         success: true,
-        sessionData: session.data
+        sessionData: session.data,
+        address
       };
       
     } catch (error: any) {

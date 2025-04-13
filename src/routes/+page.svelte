@@ -3,6 +3,7 @@
 	import { client, pga, signIn, emailOtp } from '$lib/auth-client';
 	import { onMount } from 'svelte';
 	import { walletSignIn } from '$lib/walletUtils';
+	// import { setupPGAAuth } from '$lib/pgaUtils';
 	import { 
 		SignInOverlay, 
 		ErrorNotification, 
@@ -34,20 +35,6 @@
 
 	// 데모용 올바른 인증 코드
 	const correctCode = '123456';
-	
-	// PGA 인증 토큰과 MID 설정 함수
-	// async function setupPGAAuth(sessionData: any): Promise<void> {
-	// 	if (!window.pga) return;
-		
-	// 	try {
-	// 		window.pga.helpers.setAuthToken(sessionData);
-	// 		const mid = await window.pga.helpers.getEncryptedMid();
-	// 		await pga.addMid({ encryptedMid: mid });
-	// 		console.log('PGA authentication setup complete');
-	// 	} catch (error) {
-	// 		console.error('Failed to setup PGA authentication:', error);
-	// 	}
-	// }
 	
 	// 로그인 상태 확인
 	async function checkAuthStatus(): Promise<boolean> {
@@ -148,7 +135,7 @@
 			// 	return;
 			// }
 			
-			// // PGA 인증 설정
+			// // PGA 인증 설정 (암호화된 MID 처리 포함)
 			// await setupPGAAuth(session.data);
 			
 			// 성공 페이지로 이동 (이메일 전달)
@@ -183,17 +170,16 @@
 		
 		// 결과 처리
 		if (result.success) {
-			// 세션 가져오기
-			// const session = await client.getSession();
-			// if (session.error) {
-			// 	walletError = 'Failed to get session. Please try again.';
-			// 	showWalletError = true;
-			// 	isWalletLoading = false;
-			// 	return;
+			// 성공 시 세션 데이터와 함께 PGA 인증 설정
+			// if (result.sessionData) {
+			// 	try {
+			// 		// 암호화된 MID 처리를 포함한 PGA 인증 설정
+			// 		await setupPGAAuth(result.sessionData);
+			// 	} catch (pgaError) {
+			// 		console.error('PGA setup error:', pgaError);
+			// 		// PGA 설정 오류는 치명적이지 않으므로 계속 진행
+			// 	}
 			// }
-			
-			// // PGA 인증 설정
-			// await setupPGAAuth(result.sessionData);
 			
 			// 성공 페이지로 이동 (지갑 주소도 전달)
 			const url = new URL('/sign-in-success', window.location.origin);
@@ -226,16 +212,6 @@
 			});
 			
 			// 소셜 로그인은 리디렉션을 사용하므로 여기에는 도달하지 않음
-			// 리디렉션이 발생하지 않는 경우를 위한 처리
-			// const session = await client.getSession();
-			// if (session.data) {
-			// 	if (window.pga) {
-			// 		window.pga.helpers.setAuthToken(session.data);
-			// 		await pga.addMid({ encryptedMid: "fake-mid-2" });
-			// 	}
-				
-			// 	goto("/sign-in-success?login_method=google", { replaceState: true });
-			// }
 		} catch (error) {
 			console.error('Google sign-in error:', error);
 			walletError = 'Failed to sign in with Google. Please try again.';

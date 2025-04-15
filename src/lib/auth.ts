@@ -55,7 +55,8 @@ export const auth = betterAuth({
 		cookieCache: {
 			enabled: true,
 			maxAge: 5 * 60 // Cache duration in seconds
-		}
+		},
+		expiresIn: 60 * 60 * 24 * 1 // 1 day
 	},
 	user: {
 		changeEmail: {
@@ -98,7 +99,11 @@ export const auth = betterAuth({
 		pga(),
 		bearer(),
 		openAPI(),
-		jwt(),
+		jwt({
+			jwt: {
+				expirationTime: '1d'
+			},
+		}),
 		mobile(),
 		oAuthLink(),
 		customSession(async ({ user, session }) => {

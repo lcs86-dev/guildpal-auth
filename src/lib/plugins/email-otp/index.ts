@@ -568,71 +568,43 @@ export const emailOTP = (options: EmailOTPOptions) => {
 							message: ERROR_CODES.USER_NOT_FOUND
 						});
 					}
-					if (!user) {
-						const existingSession = await getSessionFromCtx(ctx);
-						if (!existingSession) {
-							throw new APIError('BAD_REQUEST', {
-								message: ERROR_CODES.SESSION_NOT_FOUND
-							});
-						}
-						const updatedUser = await ctx.context.internalAdapter.updateUser(
-							existingSession.user.id,
-							{
-								email: ctx.body.email,
-								emailVerified: true
-							},
-							ctx
-						);
-						const session = await ctx.context.internalAdapter.createSession(
-							updatedUser.id,
-							ctx.request
-						);
-						await setSessionCookie(ctx, {
-							session,
-							user: updatedUser
-						});
-						return ctx.json({
-							token: session.token,
-							user: {
-								id: updatedUser.id,
-								email: updatedUser.email,
-								emailVerified: updatedUser.emailVerified,
-								name: updatedUser.name,
-								image: updatedUser.image,
-								createdAt: updatedUser.createdAt,
-								updatedAt: updatedUser.updatedAt
-							}
+					const existingSession = await getSessionFromCtx(ctx);
+					if (!existingSession) {
+						throw new APIError('BAD_REQUEST', {
+							message: ERROR_CODES.SESSION_NOT_FOUND
 						});
 					}
-
-					if (!user.user.emailVerified) {
-						await ctx.context.internalAdapter.updateUser(
-							user.user.id,
-							{
-								emailVerified: true
-							},
-							ctx
-						);
-					}
-
+					const updatedUser = await ctx.context.internalAdapter.updateUser(
+						existingSession.user.id,
+						{
+							email: ctx.body.email,
+							emailVerified: true
+						},
+						ctx
+					);
 					const session = await ctx.context.internalAdapter.createSession(
-						user.user.id,
+						updatedUser.id,
 						ctx.request
 					);
 					await setSessionCookie(ctx, {
 						session,
-						user: user.user
+						user: updatedUser
 					});
+					if (ctx.context.session) {
+						await ctx.context.internalAdapter.deleteSession(
+							ctx.context.session.session.token,
+						);
+					}
 					return ctx.json({
 						token: session.token,
 						user: {
-							id: user.user.id,
-							email: user.user.email,
-							emailVerified: user.user.emailVerified,
-							name: user.user.name,
-							image: user.user.image,
-							createdAt: user.user.createdAt,
-							updatedAt: user.user.updatedAt
+							id: updatedUser.id,
+							email: updatedUser.email,
+							emailVerified: updatedUser.emailVerified,
+							name: updatedUser.name,
+							image: updatedUser.image,
+							createdAt: updatedUser.createdAt,
+							updatedAt: updatedUser.updatedAt
 						}
 					});
 				}

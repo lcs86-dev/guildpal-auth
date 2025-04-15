@@ -1,4 +1,5 @@
 import { parseState, type BetterAuthPlugin, type OAuth2Tokens } from '@atomrigslab/better-auth';
+import { setSessionCookie } from '@atomrigslab/better-auth/cookies';
 import { createAuthEndpoint, HIDE_METADATA } from '@atomrigslab/better-auth/plugins';
 import { z } from 'zod';
 
@@ -131,17 +132,30 @@ export const oAuthLink = (options?: any) => {
 							return redirectOnError('unable_to_link_account');
 						}
 
-						const updateduser = await c.context.internalAdapter.updateUser(
+						const updatedUser = await c.context.internalAdapter.updateUser(
 							link.userId,
 							{
-								email: link.email,
+								email: userInfo.email,
 								emailVerified: true
 							},
 							c
 						);
-						if (!updateduser) {
+						if (!updatedUser) {
 							return redirectOnError('unable_to_update_user');
 						}
+
+						const newSession = await c.context.internalAdapter
+							.createSession(
+								updatedUser.id,
+								c.request,
+								false,
+								c.context.session?.session,
+							)
+
+						await setSessionCookie(c, {
+							session: newSession,
+							user: updatedUser,
+						});
 
 						let toRedirectTo: string;
 						try {

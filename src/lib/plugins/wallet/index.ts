@@ -82,8 +82,9 @@ export const siwe = (options: SIWEPluginOptions) =>
 					const siweMessage = new SiweMessage(message);
 
 					try {
+						const address = ctx.body.address.toLowerCase();
 						const verification = await ctx.context.internalAdapter.findVerificationValue(
-							`siwe_${ctx.body.address.toLowerCase()}`
+							`siwe_${address}`
 						);
 						if (!verification || new Date() > verification.expiresAt) {
 							throw new APIError('UNAUTHORIZED', {
@@ -105,17 +106,17 @@ export const siwe = (options: SIWEPluginOptions) =>
 						await ctx.context.internalAdapter.deleteVerificationValue(verification.id);
 
 						const wallet = (
-							await db.query('SELECT * FROM wallet WHERE address = $1', [ctx.body.address])
+							await db.query('SELECT * FROM wallet WHERE address = $1', [address])
 						).rows[0];
 
 						let user = undefined;
 						if (!wallet) {
-							const tempEmail = `${ctx.body.address}@guildpal.com`;
+							const tempEmail = `${address}@guildpal.com`;
 
 							user = await ctx.context.internalAdapter.createUser({
-								name: ctx.body.address,
+								name: address,
 								email: tempEmail,
-								address: ctx.body.address,
+								address,
 								avatar: ''
 							});
 
@@ -123,7 +124,7 @@ export const siwe = (options: SIWEPluginOptions) =>
 							const now = new Date().toISOString();
 							await db.query(
 								'INSERT INTO wallet (id, "userId", name, address, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-								[id, user.id, walletName, ctx.body.address, now, now]
+								[id, user.id, walletName, address, now, now]
 							);
 						} else {
 							user = (await db.query('SELECT * FROM "user" WHERE id = $1', [wallet.userId]))
@@ -131,16 +132,6 @@ export const siwe = (options: SIWEPluginOptions) =>
 						}
 
 						const session = await ctx.context.internalAdapter.createSession(user?.id, ctx.request);
-						if (!session) {
-							return ctx.json(null, {
-								status: 500,
-								body: {
-									message: 'Internal Server Error',
-									status: 500
-								}
-							});
-						}
-
 						await setSessionCookie(ctx, { session, user });
 
 						return ctx.json({ token: session.token });
@@ -168,6 +159,7 @@ export const siwe = (options: SIWEPluginOptions) =>
 				},
 				async (ctx) => {
 					const { message, signature } = ctx.body;
+					const address = ctx.body.address.toLowerCase();
 					const siweMessage = new SiweMessage(message);
 
 					try {
@@ -197,23 +189,38 @@ export const siwe = (options: SIWEPluginOptions) =>
 						}
 
 						const userId = existingSession.user.id;
+						
+						// Check if the wallet address already exists
+						const existingWallet = (
+							await db.query('SELECT * FROM wallet WHERE address = $1', [address])
+						).rows[0];
+						
+						if (existingWallet) {
+							// If wallet exists but belongs to another user
+							if (existingWallet.userId !== userId) {
+								throw new APIError('BAD_REQUEST', {
+									message: 'This wallet address is already linked to another account'
+								});
+							}
+							// If wallet exists and belongs to current user
+							throw new APIError('BAD_REQUEST', {
+								message: 'This wallet address is already linked to your account'
+							});
+						}
 
 						const id = generateId();
 						const now = new Date().toISOString();
 						await db.query(
 							'INSERT INTO wallet (id, "userId", name, address, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-							[id, userId, ctx.body.walletName, ctx.body.address, now, now]
+							[id, userId, ctx.body.walletName, address, now, now]
 						);
 
 						const session = await ctx.context.internalAdapter.createSession(userId, ctx.request);
-						if (!session) {
-							return ctx.json(null, {
-								status: 500,
-								body: {
-									message: 'Internal Server Error',
-									status: 500
-								}
-							});
+
+						if (ctx.context.session) {
+							await ctx.context.internalAdapter.deleteSession(
+								ctx.context.session.session.token,
+							);
 						}
 
 						await setSessionCookie(ctx, {

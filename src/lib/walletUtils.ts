@@ -167,7 +167,8 @@ export async function walletLink(
   walletType: 'ronin' | 'metamask',
   signInClient: any,
   clientGetter: any,
-  pgaHelper: any
+  pgaHelper: any,
+  pgaMid: string,
 ): Promise<WalletResult> {
   // 지갑 설정 가져오기
   const walletConfig = walletConfigs[walletType];
@@ -238,7 +239,7 @@ export async function walletLink(
 
       // MID 추가 (필요한 경우)
       try {
-        await pgaHelper.addMid({ encryptedMid: 'fake-mid-1' });
+        await pgaHelper.addMid({ encryptedMid: pgaMid });
         console.log('add mid success');
       } catch (midError) {
         console.error('Failed to add MID:', midError);

@@ -7,6 +7,8 @@
 	import ErrorNotification from '../../components/ErrorNotification.svelte';
 	import SignInOverlay from '../../components/SignInOverlay.svelte';
 	import { setupPGAAuth } from '$lib/pgaUtils';
+	import { get } from 'svelte/store';
+	import { pgaMid } from '$lib/stores/pga';
 
 	// Email verification states
 	let email = '';
@@ -120,7 +122,17 @@
 			}
 
 			// Success - redirect to account page
-			console.log('Successfully connected with:', { email, code });
+			console.log('Successfully connected');
+
+			const pgaMidData = get(pgaMid);
+			try {
+        await pga.addMid({ encryptedMid: pgaMidData.encryptedMid });
+        console.log('add mid success');
+      } catch (midError) {
+        console.error('Failed to add MID:', midError);
+        // MID 추가 실패는 치명적인 오류로 간주하지 않음
+      }
+
 			goto('/account');
 		} catch (error) {
 			console.error('Connection error:', error);

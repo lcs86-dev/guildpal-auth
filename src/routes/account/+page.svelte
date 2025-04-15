@@ -6,6 +6,8 @@
 	import { walletLink } from '$lib/walletUtils';
 	import SignInOverlay from '../../components/SignInOverlay.svelte';
 	import ErrorNotification from '../../components/ErrorNotification.svelte';
+	import { get } from 'svelte/store';
+	import { pgaMid } from '$lib/stores/pga';
 
 	// Connection status variables
 	let linked = {
@@ -139,8 +141,9 @@
 		try {
 			isConnectingWallet = true;
 			connectingWalletName = walletName;
-			
-			const result = await walletLink(walletName, signIn, client, pga);
+
+			const pgaMidData = get(pgaMid);
+			const result = await walletLink(walletName, signIn, client, pga, pgaMidData.encryptedMid);
 			
 			if (result.success) {
 				console.log(`Connected to ${walletName} wallet with address: ${result.address}`);

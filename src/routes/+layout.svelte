@@ -15,7 +15,14 @@
 
 <!-- src/routes/+layout.svelte -->
 <script>
+	import { onMount } from 'svelte';
 	import '../app.css';
+	import { initializeMid } from '$lib/stores/pga';
+
+	onMount(async () => {
+    // 페이지 로드 시 MID 초기화
+    await initializeMid();
+  });
 </script>
 
 <div class="flex min-h-screen w-full p-8 bg-black">

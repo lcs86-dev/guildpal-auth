@@ -7,9 +7,41 @@ import { PUBLIC_GOOGLE_CLIENT_ID } from '$env/static/public';
 import { pga, mobile, siwe, oAuthLink, emailOTP } from './plugins';
 
 const { Pool } = pkg;
+
+// Production-ready database pool configuration
 export const db = new Pool({
-	connectionString: DATABASE_URL
+	connectionString: DATABASE_URL,
+	// ssl: process.env.NODE_ENV === 'production' 
+	// 	? { rejectUnauthorized: true } // Enforce SSL in production
+	// 	: false,
+	max: 20, // Maximum number of clients in the pool
+	idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+	connectionTimeoutMillis: 5000, // Return an error after 5 seconds if connection cannot be established
+	maxUses: 7500, // Close and replace a connection after it has been used 7500 times
 });
+
+// Error handling for the pool
+db.on('error', (err) => {
+	console.error('Unexpected error on idle client', err);
+	process.exit(-1);
+});
+
+// Connection verification
+db.on('connect', (client) => {
+	console.log('New client connected to database');
+});
+
+// Handle application shutdown gracefully
+const closeDbAndExit = async () => {
+	console.log('Closing database pool...');
+	await db.end();
+	console.log('Database pool closed');
+	process.exit(0);
+};
+
+// Attach shutdown handlers
+process.on('SIGTERM', closeDbAndExit);
+process.on('SIGINT', closeDbAndExit);
 
 const origins = TRUSTED_ORIGINS
     .split(',')

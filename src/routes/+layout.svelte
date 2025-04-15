@@ -40,12 +40,12 @@
 		</div>
 
 		<!-- Footer - consistent across all pages -->
-		<div class="px-6 flex justify-between w-full text-xs text-white">
+		<!-- <div class="px-6 flex justify-between w-full text-xs text-white">
 			<div>©2025 PGA Platform</div>
 			<div class="flex items-center">
 				<span>Do you need help with logging in?</span>
 				<a href="/support" class="text-white ml-1 underline">Support</a>
 			</div>
-		</div>
+		</div> -->
 	</div>
 </div>

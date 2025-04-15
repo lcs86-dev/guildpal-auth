@@ -18,30 +18,37 @@
 # CMD [ "node", "build" ]
 
 # Build stage
-FROM node:18-alpine AS build
+FROM node:20-alpine AS build
 
 WORKDIR /app
+
+# Install yarn
+RUN apk add --no-cache yarn
 
 # Copy the .env file first
 COPY .env .env
 
 # Copy package.json files and install dependencies
-COPY package*.json ./
-RUN npm install
+COPY package*.json yarn.lock* ./
+RUN yarn install
 
 # Copy the rest of the application
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN yarn build
 
 # Production stage
-FROM node:18-alpine AS deploy
+FROM node:20-alpine AS deploy
 
 WORKDIR /app
 
+# Install yarn
+RUN apk add --no-cache yarn
+
 # Copy built assets from the build stage
 COPY --from=build /app/package*.json ./
+COPY --from=build /app/yarn.lock* ./
 COPY --from=build /app/build ./build
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/.env ./.env

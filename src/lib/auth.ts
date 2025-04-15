@@ -2,14 +2,19 @@ import { Resend } from 'resend';
 import pkg from 'pg';
 import { betterAuth } from '@atomrigslab/better-auth';
 import { bearer, customSession, jwt, openAPI } from '@atomrigslab/better-auth/plugins';
-import { GOOGLE_CLIENT_SECRET, RESEND_API_KEY, BETTER_AUTH_SECRET } from '$env/static/private';
+import { GOOGLE_CLIENT_SECRET, RESEND_API_KEY, BETTER_AUTH_SECRET, DATABASE_URL, TRUSTED_ORIGINS } from '$env/static/private';
 import { PUBLIC_GOOGLE_CLIENT_ID } from '$env/static/public';
 import { pga, mobile, siwe, oAuthLink, emailOTP } from './plugins';
 
 const { Pool } = pkg;
 export const db = new Pool({
-	connectionString: 'postgres://user:password@localhost:5432/database'
+	connectionString: DATABASE_URL
 });
+
+const origins = TRUSTED_ORIGINS
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(origin => origin !== '');
 
 export const auth = betterAuth({
 	appName: 'Guildpal',
@@ -31,7 +36,8 @@ export const auth = betterAuth({
 		}
 	},
 	database: db,
-	trustedOrigins: ['chrome-extension://dgoifpeldfmnlbangejfelgmgibpokej', 'http://localhost:3000'],
+	// trustedOrigins: ['chrome-extension://dgoifpeldfmnlbangejfelgmgibpokej', 'http://localhost:3000', 'http://0.0.0.0:3000'],
+	trustedOrigins: origins,
 	socialProviders: {
 		google: {
 			clientId: PUBLIC_GOOGLE_CLIENT_ID || '',

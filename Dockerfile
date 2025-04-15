@@ -56,6 +56,9 @@ COPY --from=build /app/.env ./.env
 # Set NODE_ENV to production
 ENV NODE_ENV=production
 
+# Set the host address to allow connections from outside the container
+# ENV HOST=0.0.0.0
+
 # Expose the port your app runs on
 EXPOSE 3000
 

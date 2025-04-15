@@ -21,7 +21,12 @@
 
 	onMount(async () => {
     // 페이지 로드 시 MID 초기화
-    await initializeMid();
+    const midData = await initializeMid();
+    if (midData) {
+      console.log('MID initialized:', midData);
+    } else {
+      console.log('MID not initialized');
+    }
   });
 </script>
 

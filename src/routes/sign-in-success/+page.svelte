@@ -45,7 +45,7 @@
 			let walletAddress = '';
 			if (loginMethod === 'ronin' || loginMethod === 'metamask') {
 				// 지갑 정보 찾기
-				const foundWallet = session.data?.wallet?.find(w => w.name === loginMethod);
+				const foundWallet = session.data?.wallets?.find(w => w.name === loginMethod);
 				if (foundWallet?.address) {
 					walletAddress = foundWallet.address;
 				} else {

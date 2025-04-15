@@ -107,18 +107,22 @@ export const auth = betterAuth({
 		mobile(),
 		oAuthLink(),
 		customSession(async ({ user, session }) => {
-			const mids = (await db.query('SELECT * FROM pga WHERE "userId" = $1', [user.id])).rows;
-			const wallets = (await db.query('SELECT * FROM wallet WHERE "userId" = $1', [user.id])).rows;
-			const accounts = (await db.query('SELECT * FROM account WHERE "userId" = $1', [user.id]))
-				.rows;
+			// Run all database queries concurrently rather than sequentially
+			const [midsResult, walletsResult, accountsResult] = await Promise.all([
+				db.query('SELECT mid FROM pga WHERE "userId" = $1', [user.id]),
+				db.query('SELECT * FROM wallet WHERE "userId" = $1', [user.id]),
+				db.query('SELECT * FROM account WHERE "userId" = $1', [user.id])
+			]);
+		
+			// Extract only the mid field directly instead of mapping afterward
+			const mids = midsResult.rows.map(row => row.mid);
+			
 			return {
-				user: {
-					...user
-				},
+				user,  // No need to spread if returning the entire object
 				session,
-				mid: mids,
-				wallet: wallets,
-				account: accounts
+				mids,
+				wallets: walletsResult.rows,
+				accounts: accountsResult.rows
 			};
 		})
 	]

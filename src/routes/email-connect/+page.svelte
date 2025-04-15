@@ -119,9 +119,6 @@
 				return;
 			}
 
-			
-			await setupPGAAuth()
-
 			// Success - redirect to account page
 			console.log('Successfully connected with:', { email, code });
 			goto('/account');

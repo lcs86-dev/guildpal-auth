@@ -67,12 +67,12 @@
 			
 			// Check Google connection status
 			const isGoogleLinked = !!(s?.data?.user && 
-				Array.isArray(s?.data?.account) && 
-				s?.data?.account?.find((a: any) => a.providerId === 'google'));
+				Array.isArray(s?.data?.accounts) && 
+				s?.data?.accounts?.find((a: any) => a.providerId === 'google'));
 			
 			// Check wallet connection status
-			const roninWallet = s?.data?.wallet?.find((w: any) => w.name === 'ronin');
-			const metamaskWallet = s?.data?.wallet?.find((w: any) => w.name === 'metamask');
+			const roninWallet = s?.data?.wallets?.find((w: any) => w.name === 'ronin');
+			const metamaskWallet = s?.data?.wallets?.find((w: any) => w.name === 'metamask');
 
 			// Update connection status
 			linked = {

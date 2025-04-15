@@ -80,10 +80,11 @@ export const siwe = (options: SIWEPluginOptions) =>
 				async (ctx) => {
 					const { message, signature, walletName } = ctx.body;
 					const siweMessage = new SiweMessage(message);
+					const address = ctx.body.address.toLowerCase();
 
 					try {
 						const verification = await ctx.context.internalAdapter.findVerificationValue(
-							`siwe_${ctx.body.address.toLowerCase()}`
+							`siwe_${address}`
 						);
 						if (!verification || new Date() > verification.expiresAt) {
 							throw new APIError('UNAUTHORIZED', {
@@ -105,17 +106,17 @@ export const siwe = (options: SIWEPluginOptions) =>
 						await ctx.context.internalAdapter.deleteVerificationValue(verification.id);
 
 						const wallet = (
-							await db.query('SELECT * FROM wallet WHERE address = $1', [ctx.body.address])
+							await db.query('SELECT * FROM wallet WHERE address = $1', [address])
 						).rows[0];
 
 						let user = undefined;
 						if (!wallet) {
-							const tempEmail = `${ctx.body.address}@guildpal.com`;
+							const tempEmail = `${address}@guildpal.com`;
 
 							user = await ctx.context.internalAdapter.createUser({
-								name: ctx.body.address,
+								name: address,
 								email: tempEmail,
-								address: ctx.body.address,
+								address,
 								avatar: ''
 							});
 
@@ -123,7 +124,7 @@ export const siwe = (options: SIWEPluginOptions) =>
 							const now = new Date().toISOString();
 							await db.query(
 								'INSERT INTO wallet (id, "userId", name, address, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-								[id, user.id, walletName, ctx.body.address, now, now]
+								[id, user.id, walletName, address, now, now]
 							);
 						} else {
 							user = (await db.query('SELECT * FROM "user" WHERE id = $1', [wallet.userId]))
@@ -159,10 +160,11 @@ export const siwe = (options: SIWEPluginOptions) =>
 				async (ctx) => {
 					const { message, signature } = ctx.body;
 					const siweMessage = new SiweMessage(message);
+					const address = ctx.body.address.toLowerCase();
 
 					try {
 						const verification = await ctx.context.internalAdapter.findVerificationValue(
-							`siwe_${ctx.body.address.toLowerCase()}`
+							`siwe_${address}`
 						);
 						if (!verification || new Date() > verification.expiresAt) {
 							throw new APIError('UNAUTHORIZED', {
@@ -190,7 +192,7 @@ export const siwe = (options: SIWEPluginOptions) =>
 
 						// Check if the wallet address already exists
 						const existingWallet = (
-							await db.query('SELECT * FROM wallet WHERE address = $1', [ctx.body.address])
+							await db.query('SELECT * FROM wallet WHERE address = $1', [address])
 						).rows[0];
 						
 						if (existingWallet) {
@@ -210,7 +212,7 @@ export const siwe = (options: SIWEPluginOptions) =>
 						const now = new Date().toISOString();
 						await db.query(
 							'INSERT INTO wallet (id, "userId", name, address, "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-							[id, userId, ctx.body.walletName, ctx.body.address, now, now]
+							[id, userId, ctx.body.walletName, address, now, now]
 						);
 
 						const session = await ctx.context.internalAdapter.createSession(userId, ctx.request);

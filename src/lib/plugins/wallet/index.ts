@@ -7,7 +7,7 @@ import { createAuthEndpoint, ERROR_CODES } from '@atomrigslab/better-auth/plugin
 import { generateId, type BetterAuthPlugin } from '@atomrigslab/better-auth';
 import { setSessionCookie } from '@atomrigslab/better-auth/cookies';
 import { getSessionFromCtx, APIError } from '@atomrigslab/better-auth/api';
-import { db } from '$lib/db';
+import { db } from '$lib/auth';
 
 export interface SIWEPluginOptions {
 	domain: string;

@@ -7,7 +7,7 @@ import { createAuthEndpoint, ERROR_CODES } from '@atomrigslab/better-auth/plugin
 import { generateId, type BetterAuthPlugin } from '@atomrigslab/better-auth';
 import { setSessionCookie } from '@atomrigslab/better-auth/cookies';
 import { getSessionFromCtx, APIError } from '@atomrigslab/better-auth/api';
-import { db } from '$lib/auth';
+import { db } from '$lib/db';
 
 export interface SIWEPluginOptions {
 	domain: string;
@@ -81,10 +81,11 @@ export const siwe = (options: SIWEPluginOptions) =>
 					const { message, signature, walletName } = ctx.body;
 					const siweMessage = new SiweMessage(message);
 					const address = ctx.body.address.toLowerCase();
+					const verificationIdentifier = `siwe_${address}`;
 
 					try {
 						const verification = await ctx.context.internalAdapter.findVerificationValue(
-							`siwe_${address}`
+							verificationIdentifier
 						);
 						if (!verification || new Date() > verification.expiresAt) {
 							throw new APIError('UNAUTHORIZED', {
@@ -137,6 +138,7 @@ export const siwe = (options: SIWEPluginOptions) =>
 						return ctx.json({ token: session.token });
 					} catch (error: any) {
 						console.log('error message', error.message);
+						ctx.context.internalAdapter.deleteVerificationByIdentifier(verificationIdentifier);
 						if (error instanceof APIError) throw error;
 						throw new APIError('UNAUTHORIZED', {
 							message: 'Something went wrong. Please try again later.',
@@ -161,10 +163,11 @@ export const siwe = (options: SIWEPluginOptions) =>
 					const { message, signature } = ctx.body;
 					const siweMessage = new SiweMessage(message);
 					const address = ctx.body.address.toLowerCase();
+					const verificationIdentifier = `siwe_${address}`;
 
 					try {
 						const verification = await ctx.context.internalAdapter.findVerificationValue(
-							`siwe_${address}`
+							verificationIdentifier
 						);
 						if (!verification || new Date() > verification.expiresAt) {
 							throw new APIError('UNAUTHORIZED', {
@@ -231,6 +234,7 @@ export const siwe = (options: SIWEPluginOptions) =>
 						return ctx.json({ token: session.token });
 					} catch (error: any) {
 						console.log('error', error);
+						ctx.context.internalAdapter.deleteVerificationByIdentifier(verificationIdentifier);
 						if (error instanceof APIError) throw error;
 						throw new APIError('UNAUTHORIZED', {
 							message: 'Something went wrong. Please try again later.',

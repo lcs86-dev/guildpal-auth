@@ -3,7 +3,7 @@ import pkg from 'pg';
 import { betterAuth } from '@atomrigslab/better-auth';
 import { bearer, customSession, jwt, openAPI } from '@atomrigslab/better-auth/plugins';
 import { GOOGLE_CLIENT_SECRET, RESEND_API_KEY, BETTER_AUTH_SECRET, DATABASE_URL, TRUSTED_ORIGINS } from '$env/static/private';
-import { PUBLIC_GOOGLE_CLIENT_ID } from '$env/static/public';
+import { PUBLIC_GOOGLE_CLIENT_ID, PUBLIC_AUTH_SERVICE_ORIGIN } from '$env/static/public';
 import { pga, mobile, siwe, oAuthLink, emailOTP } from './plugins';
 
 const { Pool } = pkg;
@@ -84,7 +84,7 @@ export const auth = betterAuth({
 		},
 	},
 	plugins: [
-		siwe({ domain: 'https://guildpal.com' }),
+		siwe({ domain: PUBLIC_AUTH_SERVICE_ORIGIN }),
 		emailOTP({
 			async sendVerificationOTP({ email, otp, type }) {
 				const resend = new Resend(RESEND_API_KEY);

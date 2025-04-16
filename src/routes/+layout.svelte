@@ -1,33 +1,17 @@
-<!-- <script lang="ts">
-	import '../app.css';
-
-	let { children } = $props();
-</script>
-
-<div>
-	<main>
-		{@render children()}
-	</main>
-</div>
-
-<style>
-</style> -->
-
-<!-- src/routes/+layout.svelte -->
 <script>
 	import { onMount } from 'svelte';
 	import '../app.css';
 	import { initializeMid } from '$lib/stores/pga';
 
 	onMount(async () => {
-    // 페이지 로드 시 MID 초기화
-    const midData = await initializeMid();
-    if (midData) {
-      console.log('MID initialized:', midData);
-    } else {
-      console.log('MID not initialized');
-    }
-  });
+		// 페이지 로드 시 MID 초기화
+		const midData = await initializeMid();
+		if (midData) {
+			console.log('MID initialized:', midData);
+		} else {
+			console.log('MID not initialized');
+		}
+	});
 </script>
 
 <div class="flex min-h-screen w-full p-8 bg-black">
@@ -41,6 +25,19 @@
 				alt="GuildPal Background"
 				class="absolute inset-0 w-full h-full object-fill"
 			/>
+			
+			<!-- Welcome text overlay -->
+			<div class="absolute inset-0 flex flex-col justify-center items-start p-12 z-10">
+				<div class="w-full">
+					<div class="w-full">
+						<p class="text-white text-6xl font-bold leading-tight mb-0 text-left">Welcome</p>
+						<p class="text-white text-6xl font-bold leading-tight -mt-4 text-left">Back to GuilPal.</p>
+					</div>
+					<p class="text-white text-xl text-left pt-4">
+						A new quest begins now. Are you in?
+					</p>
+				</div>
+			</div>
 		</div>
 	</div>
 	

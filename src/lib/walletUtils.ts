@@ -113,24 +113,12 @@ export async function walletSignIn(
         address,
         walletName: walletConfig.walletName
       });
-
-      if (walletType === 'metamask') {
-        console.log('result', result);
+      if (result.error) {
+        return {
+          success: false,
+          error: result.error?.messsage || 'Failed to verify signature. Please try again.'
+        };
       }
-
-      // // 세션 가져오기 및 리다이렉트
-      // const session = await clientGetter.getSession();
-
-      // if (walletType === 'metamask') {
-      //   console.log('sign-in session', session);
-      // }
-
-      // if (session.error) {
-      //   return {
-      //     success: false,
-      //     error: 'Session creation failed. Please try again.'
-      //   };
-      // }
 
       return {
         success: true,

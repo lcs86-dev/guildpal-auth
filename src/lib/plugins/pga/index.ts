@@ -42,7 +42,6 @@ export const pga = () => {
 					let mid = '';
 					try {
 						mid = decrypt(ctx.body.encryptedMid)
-						console.log('decryptedmid', mid);
 					} catch (error) {
 						console.error('Failed to decrypt MID:', error);
 						return { success: false, message: 'Failed to decrypt MID' };

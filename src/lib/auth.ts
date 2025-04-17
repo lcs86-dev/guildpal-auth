@@ -2,15 +2,15 @@ import { Resend } from 'resend';
 import pkg from 'pg';
 import { betterAuth } from '@atomrigslab/better-auth';
 import { bearer, customSession, jwt, openAPI } from '@atomrigslab/better-auth/plugins';
-import { GOOGLE_CLIENT_SECRET, RESEND_API_KEY, BETTER_AUTH_SECRET, DATABASE_URL, TRUSTED_ORIGINS } from '$env/static/private';
-import { PUBLIC_GOOGLE_CLIENT_ID, PUBLIC_AUTH_SERVICE_ORIGIN } from '$env/static/public';
+import { env as privateEnv } from '$env/dynamic/private';
+import { env as publicEnv } from '$env/dynamic/public';
 import { pga, mobile, siwe, oAuthLink, emailOTP } from './plugins';
 
 const { Pool } = pkg;
 
 // Production-ready database pool configuration
 export const db = new Pool({
-	connectionString: DATABASE_URL,
+	connectionString: privateEnv.DATABASE_URL,
 	// ssl: process.env.NODE_ENV === 'production' 
 	// 	? { rejectUnauthorized: true } // Enforce SSL in production
 	// 	: false,
@@ -43,14 +43,14 @@ const closeDbAndExit = async () => {
 process.on('SIGTERM', closeDbAndExit);
 process.on('SIGINT', closeDbAndExit);
 
-const origins = TRUSTED_ORIGINS
+const origins = privateEnv.TRUSTED_ORIGINS
     .split(',')
     .map(origin => origin.trim())
     .filter(origin => origin !== '');
 
 export const auth = betterAuth({
 	appName: 'Guildpal',
-	secret: BETTER_AUTH_SECRET,
+	secret: privateEnv.BETTER_AUTH_SECRET,
 	session: {
 		cookieCache: {
 			enabled: true,
@@ -73,8 +73,8 @@ export const auth = betterAuth({
 	trustedOrigins: origins,
 	socialProviders: {
 		google: {
-			clientId: PUBLIC_GOOGLE_CLIENT_ID || '',
-			clientSecret: GOOGLE_CLIENT_SECRET || '',
+			clientId: publicEnv.PUBLIC_GOOGLE_CLIENT_ID || '',
+			clientSecret: privateEnv.GOOGLE_CLIENT_SECRET || '',
 		}
 	},
 	onAPIError: {
@@ -84,10 +84,10 @@ export const auth = betterAuth({
 		},
 	},
 	plugins: [
-		siwe({ domain: PUBLIC_AUTH_SERVICE_ORIGIN }),
+		siwe({ domain: publicEnv.PUBLIC_AUTH_SERVICE_ORIGIN }),
 		emailOTP({
 			async sendVerificationOTP({ email, otp, type }) {
-				const resend = new Resend(RESEND_API_KEY);
+				const resend = new Resend(privateEnv.RESEND_API_KEY);
 				await resend.emails.send({
 					from: 'onboarding@resend.dev',
 					to: email,

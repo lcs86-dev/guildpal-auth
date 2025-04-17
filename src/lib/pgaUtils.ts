@@ -1,7 +1,7 @@
 import { getJwtToken, jwt } from "@atomrigslab/better-auth/plugins";
 import axios from 'axios';
 import { client, pga } from "./auth-client";
-import { PUBLIC_AUTH_SERVICE_ORIGIN } from '$env/static/public';
+import { env as publicEnv } from '$env/dynamic/public';
 
 // 로그인 성공 후 PGA 설정
 export async function setupPGAAuth(
@@ -16,7 +16,7 @@ export async function setupPGAAuth(
     const sessionToken = sessionData.session.token;
     const tRes = await axios({
       method: 'GET',
-      url: `${PUBLIC_AUTH_SERVICE_ORIGIN}/api/auth/token`,
+      url: `${publicEnv.PUBLIC_AUTH_SERVICE_ORIGIN}/api/auth/token`,
       headers: {
         Accept: '*/*',
         'Accept-Language': 'en-US,en;q=0.9',

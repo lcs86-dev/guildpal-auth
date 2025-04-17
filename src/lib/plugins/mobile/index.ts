@@ -2,7 +2,7 @@ import { APIError } from '@atomrigslab/better-auth/api';
 import { BASE_ERROR_CODES, handleOAuthUserInfo } from '@atomrigslab/better-auth';
 import { createAuthEndpoint, type BetterAuthPlugin } from '@atomrigslab/better-auth/plugins';
 import { z } from 'zod';
-import { PUBLIC_MOBILE_GOOGLE_CLIENT_ID } from '$env/static/public';
+import { env as publicEnv } from '$env/dynamic/public';
 import { setSessionCookie } from '@atomrigslab/better-auth/cookies';
 
 export const mobile = () =>
@@ -100,7 +100,7 @@ export const mobile = () =>
 					const valid = await provider.verifyIdToken(
 						token,
 						nonce,
-						PUBLIC_MOBILE_GOOGLE_CLIENT_ID
+						publicEnv.PUBLIC_MOBILE_GOOGLE_CLIENT_ID
 						// '104874438001-nddsi91qigg7hp9gk49rqopmgnp5kpr7.apps.googleusercontent.com'
 					);
 					if (!valid) {

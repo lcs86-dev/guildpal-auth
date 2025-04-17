@@ -4,21 +4,21 @@
  */
 
 import aesjs from 'aes-js';
-import { MID_ENCRYPTION_KEY } from '$env/static/private';
+import { env as privateEnv } from '$env/dynamic/private';
 
 // 암호화 키 (32바이트 고정)
 // const ENCRYPTION_KEY_STR = "";
 
 function getKeyBytes(): Uint8Array {
   // 키 길이 확인 (32바이트여야 함)
-  if (!MID_ENCRYPTION_KEY || MID_ENCRYPTION_KEY.length < 32) {
+  if (!privateEnv.MID_ENCRYPTION_KEY || privateEnv.MID_ENCRYPTION_KEY.length < 32) {
     console.warn('MID_ENCRYPTION_KEY is missing or too short, using default key');
     // 기본 키 사용 (프로덕션에서는 사용하지 말 것)
     return new Uint8Array(32).fill(1);
   }
 
   // 32바이트로 자르거나 패딩
-  const key = MID_ENCRYPTION_KEY.padEnd(32, '0').slice(0, 32);
+  const key = privateEnv.MID_ENCRYPTION_KEY.padEnd(32, '0').slice(0, 32);
   return new TextEncoder().encode(key);
 }
 

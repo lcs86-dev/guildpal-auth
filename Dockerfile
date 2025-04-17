@@ -25,15 +25,22 @@ WORKDIR /app
 # Install yarn
 RUN apk add --no-cache yarn
 
-# Copy the .env file first
-COPY .env .env
-
 # Copy package.json files and install dependencies
 COPY package*.json yarn.lock* ./
 RUN yarn install
 
 # Copy the rest of the application
 COPY . .
+
+# ARGs for public env variables that might be needed at build time
+ARG PUBLIC_GOOGLE_CLIENT_ID
+ARG PUBLIC_AUTH_SERVICE_ORIGIN
+ARG PUBLIC_MOBILE_GOOGLE_CLIENT_ID
+
+# Set as environment variables for the build process
+ENV PUBLIC_GOOGLE_CLIENT_ID=${PUBLIC_GOOGLE_CLIENT_ID}
+ENV PUBLIC_AUTH_SERVICE_ORIGIN=${PUBLIC_AUTH_SERVICE_ORIGIN}
+ENV PUBLIC_MOBILE_GOOGLE_CLIENT_ID=${PUBLIC_MOBILE_GOOGLE_CLIENT_ID}
 
 # Build the application
 RUN yarn build
@@ -51,7 +58,10 @@ COPY --from=build /app/package*.json ./
 COPY --from=build /app/yarn.lock* ./
 COPY --from=build /app/build ./build
 COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/.env ./.env
+
+# Create a .env file for SvelteKit to read at runtime
+# This will be overridden by environment variables passed at runtime
+RUN echo "# Default values, will be overridden by container env vars" > .env
 
 # Set NODE_ENV to production
 ENV NODE_ENV=production
@@ -62,4 +72,5 @@ ENV NODE_ENV=production
 # Expose the port your app runs on
 EXPOSE 3000
 
+# The actual environment variables will be passed through docker-compose
 CMD ["node", "build"]

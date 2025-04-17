@@ -6,8 +6,6 @@
 	import { goto } from '$app/navigation';
 	import { client, pga } from '$lib/auth-client';
 	import { setupPGAAuth } from '$lib/pgaUtils';
-	import { pgaMid } from '$lib/stores/pga';
-	import { get } from 'svelte/store';
 
 	let email = '';
 	let successTitle = 'You have successfully logged in.';
@@ -27,7 +25,7 @@
 				console.error('Session error:', session.error);
 				return;
 			}
-		  setupPGAAuth(session.data, get(pgaMid))
+		  setupPGAAuth(session.data)
 			
 			// 사용자 이메일 설정 (세션에서 가져옴)
 			if (session.data?.user?.email) {

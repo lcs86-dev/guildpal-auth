@@ -155,8 +155,6 @@ export async function walletLink(
   walletType: 'ronin' | 'metamask',
   signInClient: any,
   clientGetter: any,
-  pgaHelper: any,
-  pgaMid: string,
 ): Promise<WalletResult> {
   // 지갑 설정 가져오기
   const walletConfig = walletConfigs[walletType];
@@ -226,13 +224,13 @@ export async function walletLink(
       }
 
       // MID 추가 (필요한 경우)
-      try {
-        await pgaHelper.addMid({ encryptedMid: pgaMid });
-        console.log('add mid success');
-      } catch (midError) {
-        console.error('Failed to add MID:', midError);
-        // MID 추가 실패는 치명적인 오류로 간주하지 않음
-      }
+      // try {
+      //   await pgaHelper.addMid({ encryptedMid: pgaMid });
+      //   console.log('add mid success');
+      // } catch (midError) {
+      //   console.error('Failed to add MID:', midError);
+      //   // MID 추가 실패는 치명적인 오류로 간주하지 않음
+      // }
 
       // 세션 가져오기
       const session = await clientGetter.getSession();

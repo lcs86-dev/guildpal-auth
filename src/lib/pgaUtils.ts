@@ -6,15 +6,9 @@ import { PUBLIC_AUTH_SERVICE_ORIGIN } from '$env/static/public';
 // 로그인 성공 후 PGA 설정
 export async function setupPGAAuth(
   sessionData: { user: any, session: any, mids: string[] },
-  midData: { mid: string, encryptedMid: string }
 ): Promise<boolean> {
   if (!window.pga) {
     console.error("PGA not found");
-    return false;
-  }
-
-  if (!midData.mid || !midData.encryptedMid) {
-    console.error("MID data is missing");
     return false;
   }
 
@@ -35,13 +29,20 @@ export async function setupPGAAuth(
     });
     const jwtToken = tRes.data.token;
 
-    await pga.addMid({ encryptedMid: midData.encryptedMid });
+    const pgaMidStr = window.localStorage.getItem('pga-mid');
+    const pgaMidData = JSON.parse(pgaMidStr || '{}');
+
+    let mids = [...sessionData.mids];
+    if (pgaMidData.mid && !sessionData.mids.includes(pgaMidData.mid) && pgaMidData.encryptedMid) {
+      await pga.addMid({ encryptedMid: pgaMidData.encryptedMid });
+      mids = [...mids, pgaMidData.mid];
+    }
 
     await window.pga.helpers.setAuthData({
-      mids: [...sessionData.mids, midData.mid],
+      mids,
       jwtToken,
     });
-    
+
     console.log('PGA authentication complete');
     return true;
   } catch (error) {

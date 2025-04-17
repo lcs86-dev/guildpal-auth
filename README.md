@@ -33,5 +33,5 @@ You can preview the production build with `npm run preview`.
 
 ```bash
 docker build -t guildpal-auth-server .
-docker run -p 3000:3000 guildpal-auth-server
+docker run -p 5173:5173 guildpal-auth-server
 ```

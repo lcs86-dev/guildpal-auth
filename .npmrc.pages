@@ -1,0 +1,4 @@
+registry=https://registry.npmjs.org/
+email=devs@atomrigs.io
+always-auth=true
+//registry.npmjs.org/:_authToken=${NPM_TOKEN}

@@ -8,6 +8,7 @@ import { env as publicEnv } from '$env/dynamic/public';
 
 export const client = createAuthClient({
 	baseURL: publicEnv.PUBLIC_AUTH_SERVICE_ORIGIN,
+	basePath: '/auth/api/auth',
 	plugins: [
 		emailOTPClient(),
 		siweClientPlugin(),
